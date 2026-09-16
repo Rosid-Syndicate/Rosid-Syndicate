@@ -32,7 +32,7 @@ export default function Login() {
     <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
       <div className="w-full max-w-md bg-[#0f172a] p-8 border border-white/5 shadow-2xl">
         <div className="mb-10 text-center">
-          <img src="/logo.jpg" alt="Logo" className="h-12 w-auto object-contain mx-auto brightness-0 invert mb-6" />
+          <img src="/logo.png" alt="Rosid Syndicates Group Logo" className="h-16 w-auto object-contain mx-auto mb-6" />
           <h1 className="text-xl font-display font-black tracking-[0.2em] text-white uppercase">Corporate Secure Portal</h1>
           <p className="text-sm text-slate-400 mt-2">Authorized Access Only</p>
         </div>

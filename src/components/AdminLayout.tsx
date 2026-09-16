@@ -21,7 +21,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="w-full md:w-64 bg-white border-r border-slate-100 flex flex-col shrink-0">
         <div className="p-6 border-b border-slate-100">
           <Link to="/" className="flex items-center gap-3 group">
-            <img src="/logo.jpg" alt="Logo" className="h-8 w-auto object-contain brightness-0 invert" />
+            <img src="/logo.png" alt="Rosid Syndicates Group Logo" className="h-9 w-auto object-contain" />
             <span className="text-lg font-display font-black tracking-widest text-ink uppercase group-hover:text-fire transition-colors">ROSID SYNDICATES ADMIN</span>
           </Link>
         </div>
