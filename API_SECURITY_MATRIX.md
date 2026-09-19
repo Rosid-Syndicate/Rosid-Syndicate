@@ -21,24 +21,32 @@ claim is released). Structured logs never contain message bodies or raw emails.
 ## 2. Direct database access (Supabase PostgREST with the public anon key)
 
 The browser talks to PostgREST directly for public reads. After
-`20260919_admin_authorization.sql`:
+`20260919_admin_authorization.sql` and `20260919_admin_roles_content.sql`.
+Staff roles: **admin** (everything) and **editor** (content tables only).
+`is_staff()` = admin or editor; `is_admin()` = admin only.
 
-| Table | anon | authenticated non-admin | admin (`is_admin()`) | Notes |
-|---|---|---|---|---|
-| `blog_posts` | SELECT where `is_published` | same | ALL | `views` only via RPC |
-| `blog_categories` | SELECT | same | ALL | |
-| `companies` | SELECT where `is_archived = false` | same | ALL | public site currently reads bundled data instead |
-| `site_content` | SELECT | same | ALL | not rendered publicly yet |
-| `credentials` | SELECT where `is_public` | same | ALL | |
-| `inquiries` | INSERT with `status='New'` (until `20260919_inquiries_api_only.sql`) | same | ALL | no SELECT for anon → PII never readable publicly |
-| `admin_users` | — | — | SELECT | no API writes |
-| `storage.objects` (`credentials_files`) | SELECT/list only files linked to public credentials | same | ALL | bucket public → direct URL fetch bypasses RLS (documented) |
-| RPC `increment_post_views(text)` | EXECUTE | EXECUTE | EXECUTE | SECURITY DEFINER; +1 on published slug only |
-| RPC `is_admin()` | EXECUTE | EXECUTE | EXECUTE | boolean, no data |
+| Table | anon | authenticated non-staff | editor (`is_staff()`) | admin (`is_admin()`) | Notes |
+|---|---|---|---|---|---|
+| `blog_posts` | SELECT where `is_published` | same | ALL | ALL | `views` only via RPC; body is Markdown, images https-only |
+| `blog_categories` | SELECT | same | ALL | ALL | |
+| `testimonials` | SELECT where `is_published` | same | ALL | ALL | home section renders only when ≥1 published |
+| `faqs` | SELECT where `is_published` | same | ALL | ALL | seeded from the bundled list |
+| `site_content` | SELECT | same | ALL | ALL | `mission` rendered on the home page (bundled fallback) |
+| `companies` | SELECT where `is_archived = false` | same | — | ALL | public site currently reads bundled data instead |
+| `credentials` | SELECT where `is_public` | same | — | ALL | |
+| `inquiries` | INSERT with `status='New'` (until `20260919_inquiries_api_only.sql`) | same | — | ALL | no SELECT for anon → PII never readable publicly |
+| `admin_users` (staff list) | — | — | — | ALL | trigger keeps ≥1 active admin |
+| `storage.objects` (`credentials_files`) | SELECT/list only files linked to public credentials | same | — | ALL | bucket public → direct URL fetch bypasses RLS (documented) |
+| `storage.objects` (`site-media`) | SELECT | same | INSERT/UPDATE/DELETE | same | public image bucket; 5 MB + image MIME types enforced by bucket config and client |
+| RPC `increment_post_views(text)` | EXECUTE | EXECUTE | EXECUTE | EXECUTE | SECURITY DEFINER; +1 on published slug only |
+| RPC `is_admin()` / `is_staff()` / `staff_role()` | EXECUTE | EXECUTE | EXECUTE | EXECUTE | role of the caller only, no data |
+| RPC `link_admin_user()` | — | EXECUTE | EXECUTE | EXECUTE | links caller's auth id to the staff row with the same email; returns role |
 
-Client query limits: blog index ≤200, categories ≤100, related ≤3, credentials
-≤200; admin lists ≤500. Column lists are explicit (no `select('*')` on public
-pages except the single-post fetch).
+Public pages read testimonials, FAQs and site content through plain PostgREST
+fetches (`src/lib/publicData.ts`, anon key, ≤12 / ≤30 / ≤20 rows) so the
+Supabase SDK is not shipped to visitors. Client query limits: blog index ≤200,
+categories ≤100, related ≤3, credentials ≤200; admin lists ≤500. Column lists
+are explicit (no `select('*')` on public pages except the single-post fetch).
 
 ## 3. Authentication endpoints (Supabase-hosted)
 

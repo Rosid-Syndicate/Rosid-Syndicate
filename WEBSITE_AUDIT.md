@@ -206,7 +206,7 @@ findings and fixes were adapted to the real stack.
 
 ### Opportunity
 
-▸ [Opportunity] Wire `site_content` and `companies` tables to the public site (admin edits currently have no public effect) — **Business decision**; both admin pages now display a note
+▸ [Opportunity] Wire `site_content` and `companies` tables to the public site — **Partly done**: the mission statement, FAQs and published testimonials on the home page now come from the database (bundled fallbacks keep the prerender network-independent). Company pages still use bundled data because the table lacks the services/images those pages need
 
 ▸ [Opportunity] Populate `src/data/projects.ts` with cleared case studies; `/projects` and the sitemap already handle them
 
@@ -280,7 +280,7 @@ Production numbers for LCP/transfer must be re-measured after deployment; the
 | P1 | Set Vercel env: Turnstile secret, service-role key, Resend from-domain, Upstash | Config | 8 | 8 | High | **Open (manual)** |
 | P2 | Close anon INSERT after service-role key | Security | 6 | 9 | Medium | Migration ready |
 | P2 | Private credentials bucket + signed URLs | Security | 5 | 6 | Medium | Documented |
-| P2 | Wire `site_content`/`companies` tables to public pages | Product | 5 | 5 | Medium | Business decision |
+| P2 | Wire `site_content`/`companies` tables to public pages | Product | 5 | 5 | Medium | Mission/FAQs/testimonials done; companies pending |
 | P3 | Publish cleared case studies; remove `/project/` disallow | Content/SEO | 5 | 7 | Opportunity | Business decision |
 | P3 | Custom domain + `VITE_SITE_URL` | SEO | 6 | 9 | Opportunity | Business decision |
 
@@ -300,6 +300,15 @@ Production numbers for LCP/transfer must be re-measured after deployment; the
   on the site; nothing is invented.
 
 ---
+
+## Admin capabilities added after the audit
+
+Staff roles (`admin` / `editor`) with a Users & roles page; TipTap WYSIWYG blog
+editor storing Markdown, with cover-image and in-body image uploads to a
+`site-media` bucket; Testimonials and FAQs managers that drive the home page;
+accessible confirmation dialogs replacing `window.confirm`; inquiries CSV
+export; role-aware dashboard and navigation. Requires
+`supabase/migrations/20260919_admin_roles_content.sql`.
 
 ## Validation performed
 

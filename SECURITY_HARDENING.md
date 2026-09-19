@@ -13,7 +13,7 @@ outside the repository for every control to be active.
 | Edge / platform | HSTS, CSP, nosniff, frame denial, referrer & permissions policies, COOP; `noindex` + `no-store` on `/admin*`; immutable asset caching; real 404s | `vercel.json` |
 | API (lead endpoints) | Same-site origin check, method allow-list, body size cap, honeypot, strict schema, per-endpoint rate limits (IP + sender), Turnstile, duplicate suppression, escaped email, attachment validation, structured logging, honest status codes | `api/_lib/*.js`, `api/contact.js`, `api/tender.js` |
 | Database | Admin allow-list + `is_admin()` policies, narrowed anon grants, CHECK constraints, storage listing guard, RPC for view counter | `supabase/migrations/20260919_*.sql` |
-| Client | Single write path through the API, no hard-coded credentials, safe markdown renderer, generic auth errors, noindex on private views | `src/lib/leads.ts`, `src/lib/supabase.ts`, `src/lib/markdown.tsx`, admin pages |
+| Client | Single write path through the API, no hard-coded credentials, safe markdown renderer (https images only), generic auth errors, noindex on private views, role-aware admin UI, client-side image validation before upload | `src/lib/leads.ts`, `src/lib/supabase.ts`, `src/lib/markdown.tsx`, admin pages |
 | Build | Fails when public Supabase env is missing; route/manifest drift check; no source maps; 0 known vulnerabilities | `vite.config.ts`, `scripts/check-seo-routes.mjs` |
 
 ---
@@ -77,11 +77,12 @@ Cloudflare outage degrades to honeypot + rate limits instead of blocking leads.
 |---|---|---|
 | Sign-up | Must be disabled in Supabase dashboard (public sign-up currently enabled) | **Manual** |
 | Sign-in | Supabase Auth defaults (bcrypt, JWT, refresh). Generic error message in UI. Supabase's built-in auth rate limits apply | Code done; review dashboard limits |
-| Admin membership | `public.admin_users` allow-list; `is_admin()` used by every RLS policy | Migration |
+| Staff membership & roles | `public.admin_users` (email-based rows, `role` = `admin` or `editor`, `is_active`); `staff_role()`, `is_admin()`, `is_staff()` used by every RLS policy. Rows link to the auth user on first sign-in (`link_admin_user()`); a trigger prevents removing or demoting the last active admin | Migration |
+| Editor role | Content tables only (blog posts, categories, testimonials, FAQs, site content). No inquiries, credentials, companies or staff management — enforced by RLS and mirrored in the admin navigation | Migration + code |
 | Table access (anon) | SELECT on published/public rows only; INSERT on `inquiries` with `status = 'New'` (until `20260919_inquiries_api_only.sql`) | Migration |
-| Table access (authenticated, non-admin) | Nothing beyond anon | Migration |
-| Storage | anon: read/list only files linked to `is_public` credentials; admins: full | Migration |
-| Client route guard | `ProtectedRoute` redirects unauthenticated users to `/admin/login` (UX only; not a security boundary) | Code |
+| Table access (authenticated, non-staff) | Nothing beyond anon | Migration |
+| Storage | `credentials_files`: anon read/list only files linked to `is_public` credentials; admins full. `site-media`: public read, staff write, 5 MB, image MIME types only (bucket config); the client validates type/size and downsizes to WebP ≤1800 px before upload | Migration + code |
+| Client route guard | `ProtectedRoute` redirects unauthenticated users to `/admin/login`, shows a "no admin access" state for signed-in non-staff, and keeps `/admin/users` admin-only (UX only; RLS is the boundary) | Code |
 | IDOR | No user-scoped resources exist; all admin resources are group-wide by design. Inquiry ids are UUIDs; access is governed by `is_admin()` | Verified |
 
 ---
@@ -174,8 +175,8 @@ or public pages for verified search bots.
 
 ## 10. Supabase requirements
 
-1. Apply `supabase/migrations/20260919_admin_authorization.sql` in the SQL editor.
-2. Review `public.admin_users`; remove non-staff accounts.
+1. Apply `supabase/migrations/20260919_admin_authorization.sql`, then `20260919_admin_roles_content.sql` in the SQL editor.
+2. Review `public.admin_users` (email, role, is_active); remove non-staff accounts. Add colleagues from Admin → Users & roles, then create their login in Authentication → Users — the browser never holds a service key, so it cannot create auth accounts itself.
 3. Authentication → Providers → Email → disable new sign-ups; consider enabling Auth captcha.
 4. Add `SUPABASE_SERVICE_ROLE_KEY` to Vercel, then apply `20260919_inquiries_api_only.sql`.
 5. Optional: `UPDATE storage.buckets SET public = false WHERE id = 'credentials_files'` after confirming `credentials.file_url` values are storage paths (the public page then needs signed URLs — small change in `src/pages/Credentials.tsx`).

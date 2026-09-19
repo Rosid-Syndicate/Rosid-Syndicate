@@ -141,6 +141,10 @@ All component classes are in `src/index.css` (`@layer components`).
 | SEO head | `src/components/Seo.tsx` | Every page renders exactly one. |
 | Status badge (admin) | `StatusBadge` in `src/pages/admin/Inquiries.tsx` | Color + text, never color alone. |
 | Not found | `src/pages/NotFound.tsx` | Used for unknown slugs; `noindex`. |
+| Testimonials | `src/components/Testimonials.tsx` | Renders nothing until a real quote is published from the admin; initials avatar when there is no photo. |
+| Confirm dialog | `ConfirmProvider` / `useConfirm()` in `src/components/ConfirmDialog.tsx` | Native `<dialog>`, focus-trapped; `tone: 'danger'` for destructive actions. Never `window.confirm`. |
+| Image field | `src/components/ImageField.tsx` | Upload (validated, downsized to WebP) to the `site-media` bucket or paste an https URL; preview + remove. |
+| Rich text editor | `src/components/RichTextEditor.tsx` | TipTap 3, Markdown in/out; toolbar: block type, bold, italic, lists, quote, code, divider, link (https/mailto), image, undo/redo. |
 
 ### 3.1 States (required on every interactive component)
 
@@ -245,8 +249,12 @@ Rules:
 ## 9. Admin
 
 Same tokens, light theme only (`canvas` background, `surface` cards, 2 px
-radius). Priorities: speed, density, accuracy. Every mutation reports the real
-result — no optimistic success. Destructive actions confirm and use `danger`.
+radius). Sidebar groups: Overview · Leads · Content · Organisation · Settings;
+items the current role cannot use are not rendered (editors see Content only).
+Priorities: speed, density, accuracy. Every mutation reports the real result —
+no optimistic success. Destructive actions go through `useConfirm()` with
+`tone: 'danger'`. Ordered lists (testimonials, FAQs) use move up/down buttons
+rather than drag-and-drop so ordering works with a keyboard.
 
 ---
 

@@ -11,10 +11,11 @@ Production: https://rosid-sydnicate-company.vercel.app
 | Layer | Technology |
 |---|---|
 | UI | React 18 · TypeScript · Vite 6 · Tailwind CSS 3 · React Router 7 (`BrowserRouter`) |
-| Data & auth | Supabase (Postgres + Row Level Security, Auth, Storage) |
+| Data & auth | Supabase (Postgres + Row Level Security, Auth, Storage); staff roles `admin` / `editor` |
 | Serverless | Vercel Node functions in `api/` (`/api/contact`, `/api/tender`, `/api/sitemap`) |
 | Anti-abuse | Cloudflare Turnstile, honeypot, per-endpoint rate limits (optional Upstash Redis), duplicate suppression |
 | Email | Resend |
+| Editor | TipTap 3 (MIT) storing Markdown; images uploaded to the `site-media` bucket |
 | Analytics | GA4 (only when `VITE_GA_MEASUREMENT_ID` is set) |
 
 The home route is pre-rendered to static HTML at build time and hydrated; all
@@ -32,7 +33,7 @@ src/
   config/site.ts        site identity: canonical origin, name, contact details
   data/                 companies, services, sectors, FAQs, bundled blog fallback
   hooks/, lib/          images, markdown renderer, leads client, JSON-LD helpers
-  pages/                route components; pages/admin for the CMS
+  pages/                route components; pages/admin for the CMS (dashboard, inquiries, blog editor, testimonials, FAQs, users & roles)
 supabase/migrations/    SQL migrations (apply in the Supabase SQL editor)
 tests/                  node:test suites for the API pipeline
 DESIGN.md               design system — source of truth for UI work
@@ -84,8 +85,11 @@ fails fast if the public Supabase variables are missing.
 
 Apply the migrations in `supabase/migrations/` in order through the Supabase SQL
 editor. `20260919_admin_authorization.sql` introduces the admin allow-list and
-admin-only policies — review `public.admin_users` after applying it and disable
-public sign-ups in Authentication settings. `20260919_inquiries_api_only.sql` is
+admin-only policies; `20260919_admin_roles_content.sql` adds staff roles
+(`admin` / `editor`), the testimonials and FAQs tables and the `site-media`
+upload bucket. Review `public.admin_users` after applying them and disable
+public sign-ups in Authentication settings. Add colleagues from Admin → Users &
+roles, then create their login in Supabase Authentication → Users. `20260919_inquiries_api_only.sql` is
 optional and should be applied only after `SUPABASE_SERVICE_ROLE_KEY` is set in
 Vercel.
 
