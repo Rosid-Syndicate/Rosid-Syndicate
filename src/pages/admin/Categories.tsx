@@ -4,10 +4,12 @@ import toast from 'react-hot-toast'
 import { PlusIcon, TrashIcon, ArrowLeftIcon, FolderIcon } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import type { BlogCategory } from '../../data/blog'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 const slugify = (s: string) => s.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').slice(0, 80)
 
 export default function AdminCategories() {
+  const confirm = useConfirm()
   const [categories, setCategories] = useState<BlogCategory[]>([])
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [name, setName] = useState('')
@@ -54,7 +56,8 @@ export default function AdminCategories() {
   }
 
   const remove = async (cat: BlogCategory) => {
-    if (!window.confirm(`Delete category "${cat.name}"? Posts keep their category label but the category page will disappear.`)) return
+    const ok = await confirm({ title: `Delete category "${cat.name}"?`, description: 'Posts keep their category label, but the public category page will disappear.', confirmLabel: 'Delete category', tone: 'danger' })
+    if (!ok) return
     const { error } = await supabase.from('blog_categories').delete().eq('id', cat.id)
     if (error) {
       toast.error(`Delete failed: ${error.message}`)

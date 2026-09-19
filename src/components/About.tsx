@@ -11,7 +11,10 @@ const pillars = [
   'Import/export, warehousing and last-mile logistics',
 ]
 
-export default function About() {
+export const DEFAULT_MISSION =
+  "To bridge critical gaps in Nepal's infrastructure, financial and commercial ecosystems through strategic partnerships, rigorous financial structuring and cross-border trade — with transparency, speed and quality."
+
+export default function About({ mission = DEFAULT_MISSION }: { mission?: string }) {
   return (
     <section id="about" className="py-20 lg:py-28 bg-canvas" aria-labelledby="about-heading">
       <div className="container">
@@ -57,9 +60,7 @@ export default function About() {
               />
               <figcaption className="mt-4 card p-6 lg:absolute lg:-bottom-8 lg:-left-8 lg:max-w-md">
                 <p className="text-xs font-bold uppercase tracking-[0.1em] text-accent-text">Mission</p>
-                <blockquote className="mt-2 text-ink leading-relaxed">
-                  To bridge critical gaps in Nepal's infrastructure, financial and commercial ecosystems through strategic partnerships, rigorous financial structuring and cross-border trade — with transparency, speed and quality.
-                </blockquote>
+                <blockquote className="mt-2 text-ink leading-relaxed">{mission}</blockquote>
               </figcaption>
             </figure>
           </div>

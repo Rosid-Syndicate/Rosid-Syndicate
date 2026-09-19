@@ -5,6 +5,7 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, EyeIcon, MagnifyingGlassIcon, Ar
 import { supabase } from '../../lib/supabase'
 import type { BlogPost } from '../../data/blog'
 import { unsplash } from '../../lib/images'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 type Filter = 'all' | 'published' | 'draft'
 
@@ -14,6 +15,7 @@ type Filter = 'all' | 'published' | 'draft'
  * made it look like deletes "worked" when nothing was stored).
  */
 export default function AdminBlog() {
+  const confirm = useConfirm()
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [search, setSearch] = useState('')
@@ -51,7 +53,8 @@ export default function AdminBlog() {
   }
 
   const remove = async (post: BlogPost) => {
-    if (!window.confirm(`Delete "${post.title}"? This cannot be undone.`)) return
+    const ok = await confirm({ title: `Delete "${post.title}"?`, description: 'The article and its statistics are removed permanently.', confirmLabel: 'Delete post', tone: 'danger' })
+    if (!ok) return
     const { error } = await supabase.from('blog_posts').delete().eq('id', post.id)
     if (error) {
       toast.error(`Delete failed: ${error.message}`)

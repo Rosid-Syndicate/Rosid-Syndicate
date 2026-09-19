@@ -1,6 +1,8 @@
 import { useId, useState } from 'react'
 import { PlusIcon } from '@heroicons/react/20/solid'
-import { faqs } from '../data/faqs'
+import { faqs as bundledFaqs } from '../data/faqs'
+
+export type FaqItem = { q: string; a: string }
 
 
 /**
@@ -9,7 +11,8 @@ import { faqs } from '../data/faqs'
  * labelled by its question. The same content feeds the FAQPage JSON-LD emitted
  * by the home page.
  */
-export default function FAQ() {
+export default function FAQ({ items = bundledFaqs }: { items?: FaqItem[] }) {
+  const faqs = items
   const [open, setOpen] = useState<number | null>(0)
   const baseId = useId()
 

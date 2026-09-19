@@ -134,7 +134,9 @@
   .prose-body hr { @apply border-line my-10; }
   .prose-body pre { @apply bg-deep text-slate-200 p-5 rounded-sm overflow-x-auto text-sm font-mono; }
   .prose-body code { @apply font-mono text-[0.95em]; }
-  .prose-body img { @apply rounded-sm; }
+  .prose-body img { @apply rounded-sm max-w-full h-auto; }
+  .prose-body figure { @apply my-8; }
+  .prose-body figcaption { @apply mt-2 text-sm text-muted text-center; }
   .prose-body table { @apply w-full text-sm border-collapse; }
   .prose-body th, .prose-body td { @apply border border-line px-3 py-2 text-left align-top; }
   .prose-body th { @apply bg-canvas text-ink font-bold; }

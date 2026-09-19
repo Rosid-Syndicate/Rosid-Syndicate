@@ -5,6 +5,8 @@ import { ArrowLeftIcon, EyeIcon, DocumentTextIcon, CheckIcon } from '@heroicons/
 import { supabase } from '../../lib/supabase'
 import { renderMarkdown } from '../../lib/markdown'
 import { unsplash } from '../../lib/images'
+import RichTextEditor from '../../components/RichTextEditor'
+import ImageField from '../../components/ImageField'
 import type { BlogCategory, BlogPost } from '../../data/blog'
 import { INITIAL_CATEGORIES } from '../../data/blog'
 
@@ -48,7 +50,7 @@ export default function AdminBlogEditor() {
   const [slugTouched, setSlugTouched] = useState(false)
   const [excerpt, setExcerpt] = useState('')
   const [content, setContent] = useState('')
-  const [featuredImage, setFeaturedImage] = useState(PRESET_IMAGES[0].url)
+  const [featuredImage, setFeaturedImage] = useState('')
   const [categorySlug, setCategorySlug] = useState('company-news')
   const [author, setAuthor] = useState('Rosid Editorial Team')
   const [authorRole, setAuthorRole] = useState('Executive Advisory')
@@ -114,6 +116,10 @@ export default function AdminBlogEditor() {
     const finalSlug = slugify(slug || title)
     if (!finalSlug) {
       toast.error('Please provide a URL slug.')
+      return
+    }
+    if (!featuredImage) {
+      toast.error('Please add a cover image (upload one or pick a preset).')
       return
     }
     let imageUrl: string
@@ -257,28 +263,29 @@ export default function AdminBlogEditor() {
 
           <fieldset className="card p-6 sm:p-8 space-y-4">
             <legend className="text-xs font-bold uppercase tracking-[0.1em] text-muted px-1">Featured image</legend>
-            <div>
-              <label htmlFor="post-image" className="field-label">Image URL (https)</label>
-              <input id="post-image" type="url" required value={featuredImage} onChange={(e) => setFeaturedImage(e.target.value)} className="field font-mono text-xs" />
-            </div>
-            <div role="group" aria-label="Preset images" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {PRESET_IMAGES.map((preset) => (
-                <button key={preset.url} type="button" onClick={() => setFeaturedImage(preset.url)} aria-pressed={featuredImage === preset.url} className={`p-2 text-left rounded-sm border text-xs transition-colors ${featuredImage === preset.url ? 'border-ink bg-canvas font-bold text-ink' : 'border-line hover:border-ink/40 text-muted'}`}>
-                  <img src={unsplash(preset.url, { w: 320, q: 55 })} alt="" loading="lazy" className="w-full h-16 object-cover rounded-sm mb-1.5" />
-                  <span className="block truncate">{preset.label}</span>
-                </button>
-              ))}
-            </div>
+            <ImageField label="Cover image" value={featuredImage} onChange={setFeaturedImage} folder="blog" hint="Landscape, at least 1200 px wide · JPG, PNG or WebP · up to 5 MB" />
+            {!featuredImage && (
+              <div role="group" aria-label="Preset images">
+                <p className="text-xs font-semibold text-muted mb-2">Or pick a stock preset:</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {PRESET_IMAGES.map((preset) => (
+                    <button key={preset.url} type="button" onClick={() => setFeaturedImage(preset.url)} className="p-2 text-left rounded-sm border border-line hover:border-ink/40 text-muted text-xs transition-colors">
+                      <img src={unsplash(preset.url, { w: 320, q: 55 })} alt="" loading="lazy" className="w-full h-16 object-cover rounded-sm mb-1.5" />
+                      <span className="block truncate">{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </fieldset>
 
-          <fieldset className="card p-6 sm:p-8 space-y-3">
-            <legend className="text-xs font-bold uppercase tracking-[0.1em] text-muted px-1">Article body</legend>
+          <section aria-labelledby="body-heading" className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <label htmlFor="post-content" className="field-label mb-0">Markdown <span aria-hidden="true" className="text-accent-text">*</span></label>
-              <p className="text-xs text-muted">Supports ## and ### headings, - lists, 1. lists, **bold**, *italic*, [links](https://…), --- and ``` code. Raw HTML is shown as text.</p>
+              <h2 id="body-heading" className="text-xs font-bold uppercase tracking-[0.1em] text-muted">Article body <span aria-hidden="true" className="text-accent-text">*</span></h2>
+              <p className="text-xs text-muted">Headings, lists, quotes, links and uploaded images. Stored as Markdown; raw HTML is never published.</p>
             </div>
-            <textarea id="post-content" rows={18} required value={content} onChange={(e) => setContent(e.target.value)} className="field font-mono text-sm leading-relaxed" placeholder="Write the article…" />
-          </fieldset>
+            <RichTextEditor value={content} onChange={setContent} ariaLabelledBy="body-heading" />
+          </section>
         </form>
       )}
     </div>

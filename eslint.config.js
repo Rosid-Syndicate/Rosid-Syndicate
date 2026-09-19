@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'public'] },
+  { ignores: ['dist', 'node_modules', 'public', '.claude'] },
   // Serverless functions, scripts and tests (plain ESM, Node globals)
   {
     files: ['api/**/*.js', 'scripts/**/*.mjs', 'tests/**/*.mjs'],

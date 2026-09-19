@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useId, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { PhoneIcon, BuildingOffice2Icon, TrashIcon, ArrowPathIcon, MagnifyingGlassIcon, InboxIcon } from '@heroicons/react/24/outline'
+import { PhoneIcon, BuildingOffice2Icon, TrashIcon, ArrowPathIcon, MagnifyingGlassIcon, InboxIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 type Inquiry = {
   id: string
@@ -41,6 +42,7 @@ export function StatusBadge({ status }: { status: string }) {
  * when Supabase returned an error.
  */
 export default function Inquiries() {
+  const confirm = useConfirm()
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [refreshing, setRefreshing] = useState(false)
@@ -84,7 +86,8 @@ export default function Inquiries() {
   }
 
   const deleteInquiry = async (inq: Inquiry) => {
-    if (!window.confirm(`Delete the inquiry from "${inq.name}"? This cannot be undone.`)) return
+    const ok = await confirm({ title: `Delete the inquiry from "${inq.name}"?`, description: 'Consider marking it Closed instead — deletion cannot be undone.', confirmLabel: 'Delete inquiry', tone: 'danger' })
+    if (!ok) return
     const { error } = await supabase.from('inquiries').delete().eq('id', inq.id)
     if (error) {
       toast.error(`Delete failed: ${error.message}`)
@@ -102,6 +105,19 @@ export default function Inquiries() {
     return matchesSearch && matchesStatus
   })
 
+  /** CSV of the currently filtered rows (built in the browser; nothing is sent anywhere). */
+  const exportCsv = () => {
+    const esc = (v: string | null) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const header = ['Received', 'Status', 'Type', 'Name', 'Company', 'Email', 'Phone', 'Subject', 'Message']
+    const lines = filtered.map((i) => [i.created_at, i.status, i.inquiry_type, i.name, i.company_name, i.email, i.phone, i.subject, i.message].map(esc).join(','))
+    const blob = new Blob(['﻿' + [header.join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `inquiries-${filterStatus}-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   const setFilter = (st: string) => {
     const next = new URLSearchParams(params)
     if (st === 'all') next.delete('status')
@@ -116,9 +132,14 @@ export default function Inquiries() {
           <h1 className="text-h2 text-ink">Inquiries</h1>
           <p className="mt-1 text-sm text-muted">Contact messages and tender / RFQ submissions from the website.</p>
         </div>
-        <button type="button" onClick={() => load(true)} disabled={refreshing} className="btn-secondary btn-sm" aria-busy={refreshing}>
-          <ArrowPathIcon className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" /> Refresh
-        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={exportCsv} disabled={filtered.length === 0} className="btn-secondary btn-sm">
+            <ArrowDownTrayIcon className="w-4 h-4" aria-hidden="true" /> Export CSV ({filtered.length})
+          </button>
+          <button type="button" onClick={() => load(true)} disabled={refreshing} className="btn-secondary btn-sm" aria-busy={refreshing}>
+            <ArrowPathIcon className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" /> Refresh
+          </button>
+        </div>
       </header>
 
       <div className="card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">

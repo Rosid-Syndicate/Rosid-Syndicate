@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 /**
  * Minimal, safe renderer for the markdown subset used by the blog editor:
  *   ## / ### headings · paragraphs · - / * bullet lists · 1. numbered lists
- *   --- rules · ``` code fences · **bold** · *italic* · [text](url)
+ *   --- rules · ``` code fences · **bold** · *italic* · [text](url) · ![alt](https-url)
  *
  * It builds React elements instead of HTML strings, so raw HTML in content is
  * rendered as text (the previous renderer used dangerouslySetInnerHTML over
@@ -22,32 +22,44 @@ function safeHref(url: string): string | null {
   return trimmed
 }
 
+// Images: https only (blog uploads live in the public site-media bucket).
+const SAFE_IMAGE = /^https:\/\/[^\s]+$/i
+function safeImageSrc(url: string): string | null {
+  const trimmed = url.trim()
+  return SAFE_IMAGE.test(trimmed) && !CONTROL_CHARS.test(trimmed) ? trimmed : null
+}
+
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = []
-  // tokens: [text](url) | **bold** | *italic*
-  const re = /\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*\n]+)\*/g
+  // tokens: ![alt](url) | [text](url) | **bold** | *italic* | _italic_
+  const re = /!\[([^\]]*)\]\(([^)\s]+)\)|\[([^\]]+)\]\(([^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*\n]+)\*|(?<![A-Za-z0-9])_([^_\n]+)_(?![A-Za-z0-9])/g
   let last = 0
   let m: RegExpExecArray | null
   let i = 0
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) nodes.push(text.slice(last, m.index))
     const key = `${keyPrefix}-${i++}`
-    if (m[1] !== undefined) {
-      const href = safeHref(m[2])
+    if (m[2] !== undefined) {
+      const src = safeImageSrc(m[2])
+      if (src) nodes.push(<img key={key} src={src} alt={m[1] || ''} loading="lazy" decoding="async" />)
+    } else if (m[3] !== undefined) {
+      const href = safeHref(m[4])
       const external = href ? /^https?:\/\//i.test(href) : false
       nodes.push(
         href ? (
           <a key={key} href={href} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
-            {m[1]}
+            {m[3]}
           </a>
         ) : (
-          <span key={key}>{m[1]}</span>
+          <span key={key}>{m[3]}</span>
         )
       )
-    } else if (m[3] !== undefined) {
-      nodes.push(<strong key={key}>{m[3]}</strong>)
-    } else if (m[4] !== undefined) {
-      nodes.push(<em key={key}>{m[4]}</em>)
+    } else if (m[5] !== undefined) {
+      nodes.push(<strong key={key}>{m[5]}</strong>)
+    } else if (m[6] !== undefined) {
+      nodes.push(<em key={key}>{m[6]}</em>)
+    } else if (m[7] !== undefined) {
+      nodes.push(<em key={key}>{m[7]}</em>)
     }
     last = m.index + m[0].length
   }
@@ -115,6 +127,20 @@ export function renderMarkdown(content: string): ReactNode[] {
       )
       return
     }
+    // a paragraph that is only an image becomes a figure (alt text as caption)
+    const imageOnly = block.match(/^!\[([^\]]*)\]\(([^)\s]+)\)$/)
+    if (imageOnly) {
+      const src = safeImageSrc(imageOnly[2])
+      if (src) {
+        out.push(
+          <figure key={key}>
+            <img src={src} alt={imageOnly[1] || ''} loading="lazy" decoding="async" />
+            {imageOnly[1] && <figcaption>{imageOnly[1]}</figcaption>}
+          </figure>
+        )
+      }
+      return
+    }
     // paragraph — single newlines inside a paragraph become line breaks
     const parts: ReactNode[] = []
     lines.forEach((l, i) => {
@@ -132,6 +158,7 @@ export function markdownToText(content: string, max = 160): string {
   const text = content
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/^#+\s+/gm, '')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
     .replace(/[*_>`-]/g, '')
     .replace(/\s+/g, ' ')

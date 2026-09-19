@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 type Credential = {
   id: string
@@ -28,6 +29,7 @@ const MAX_BYTES = 10 * 1024 * 1024
 const ACCEPT: Record<string, string> = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png' }
 
 export default function Credentials() {
+  const confirm = useConfirm()
   const [credentials, setCredentials] = useState<Credential[]>([])
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [uploading, setUploading] = useState(false)
@@ -61,7 +63,8 @@ export default function Credentials() {
   }
 
   const remove = async (c: Credential) => {
-    if (!window.confirm(`Delete "${c.title}"? The file is removed from storage as well.`)) return
+    const ok = await confirm({ title: `Delete "${c.title}"?`, description: 'The record and the uploaded file are removed permanently.', confirmLabel: 'Delete document', tone: 'danger' })
+    if (!ok) return
     const { error } = await supabase.from('credentials').delete().eq('id', c.id)
     if (error) {
       toast.error(`Delete failed: ${error.message}`)

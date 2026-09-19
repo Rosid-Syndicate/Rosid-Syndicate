@@ -4,6 +4,7 @@ import { ArrowPathIcon, DocumentPlusIcon, InboxIcon, ArrowRightIcon } from '@her
 import toast from 'react-hot-toast'
 import { supabase } from '../../lib/supabase'
 import { StatusBadge } from './Inquiries'
+import { useAuth } from '../../contexts/AuthContext'
 
 interface InquiryItem {
   id: string
@@ -28,9 +29,11 @@ type Counts = {
   drafts: number
   categories: number
   credentials: number
+  testimonials: number
+  faqs: number
 }
 
-const EMPTY: Counts = { total: 0, new: 0, read: 0, contacted: 0, closed: 0, companies: 0, posts: 0, drafts: 0, categories: 0, credentials: 0 }
+const EMPTY: Counts = { total: 0, new: 0, read: 0, contacted: 0, closed: 0, companies: 0, posts: 0, drafts: 0, categories: 0, credentials: 0, testimonials: 0, faqs: 0 }
 
 // Head-only count queries: no rows are transferred (the previous dashboard
 // downloaded every inquiry row to compute four numbers).
@@ -41,6 +44,8 @@ function n(r: { count: number | null; error: { message: string } | null }) {
 }
 
 export default function Dashboard() {
+  const { role } = useAuth()
+  const canSeeLeads = role === 'admin'
   const [counts, setCounts] = useState<Counts>(EMPTY)
   const [recent, setRecent] = useState<InquiryItem[]>([])
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
@@ -50,7 +55,7 @@ export default function Dashboard() {
   const load = useCallback(async (manual = false) => {
     if (manual) setRefreshing(true)
     try {
-      const [rTotal, rNew, rRead, rContacted, rClosed, rCompanies, rPosts, rDrafts, rCategories, rCredentials, recentRes] = await Promise.all([
+      const [rTotal, rNew, rRead, rContacted, rClosed, rCompanies, rPosts, rDrafts, rCategories, rCredentials, rTestimonials, rFaqs, recentRes] = await Promise.all([
         supabase.from('inquiries').select('*', HEAD),
         supabase.from('inquiries').select('*', HEAD).eq('status', 'New'),
         supabase.from('inquiries').select('*', HEAD).eq('status', 'Read'),
@@ -61,6 +66,8 @@ export default function Dashboard() {
         supabase.from('blog_posts').select('*', HEAD).eq('is_published', false),
         supabase.from('blog_categories').select('*', HEAD),
         supabase.from('credentials').select('*', HEAD),
+        supabase.from('testimonials').select('*', HEAD).eq('is_published', true),
+        supabase.from('faqs').select('*', HEAD).eq('is_published', true),
         supabase
           .from('inquiries')
           .select('id, name, company_name, email, subject, message, inquiry_type, status, created_at')
@@ -68,9 +75,12 @@ export default function Dashboard() {
           .limit(6),
       ])
       if (recentRes.error) throw recentRes.error
+      const soft = (r: { count: number | null; error: { message: string } | null }) => (r.error ? 0 : (r.count ?? 0)) // tables from the roles/content migration may not exist yet
       const [total, nw, rd, ct, cl, companies, posts, drafts, categories, credentials] = [rTotal, rNew, rRead, rContacted, rClosed, rCompanies, rPosts, rDrafts, rCategories, rCredentials].map(n)
+      const testimonials = soft(rTestimonials)
+      const faqs = soft(rFaqs)
       const recentRows = recentRes.data
-      setCounts({ total, new: nw, read: rd, contacted: ct, closed: cl, companies, posts, drafts, categories, credentials })
+      setCounts({ total, new: nw, read: rd, contacted: ct, closed: cl, companies, posts, drafts, categories, credentials, testimonials, faqs })
       setRecent((recentRows ?? []) as InquiryItem[])
       setState('ready')
       if (manual) toast.success('Dashboard refreshed')
@@ -121,7 +131,8 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Inquiry pipeline — the numbers an operator acts on */}
+      {/* Inquiry pipeline — the numbers an operator acts on (admins only) */}
+      {canSeeLeads && (
       <section aria-labelledby="pipeline-heading">
         <div className="flex items-baseline justify-between mb-3">
           <h2 id="pipeline-heading" className="text-xs font-bold uppercase tracking-[0.1em] text-muted">Inquiry pipeline · {counts.total} total</h2>
@@ -138,9 +149,11 @@ export default function Dashboard() {
           ))}
         </ul>
       </section>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Recent inquiries */}
+        {canSeeLeads ? (
         <section className="lg:col-span-2 card overflow-hidden" aria-labelledby="recent-heading">
           <div className="p-5 border-b border-line flex items-center justify-between">
             <h2 id="recent-heading" className="text-h3 text-ink">Recent inquiries</h2>
@@ -186,6 +199,17 @@ export default function Dashboard() {
             </div>
           )}
         </section>
+        ) : (
+          <section className="lg:col-span-2 card p-6" aria-labelledby="editor-heading">
+            <h2 id="editor-heading" className="text-h3 text-ink">Content tools</h2>
+            <p className="mt-2 text-sm text-muted">As an editor you can manage blog posts, categories, testimonials, FAQs and site content. Inquiries, credentials, companies and users are admin-only.</p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/admin/blog/create" className="btn-primary btn-sm">New post</Link>
+              <Link to="/admin/testimonials" className="btn-secondary btn-sm">Testimonials</Link>
+              <Link to="/admin/faqs" className="btn-secondary btn-sm">FAQs</Link>
+            </div>
+          </section>
+        )}
 
         {/* Content overview */}
         <section className="card p-5" aria-labelledby="content-heading">
@@ -195,6 +219,8 @@ export default function Dashboard() {
               { k: 'Published posts', v: counts.posts, to: '/admin/blog' },
               { k: 'Draft posts', v: counts.drafts, to: '/admin/blog' },
               { k: 'Categories', v: counts.categories, to: '/admin/categories' },
+              { k: 'Published testimonials', v: counts.testimonials, to: '/admin/testimonials' },
+              { k: 'Published FAQs', v: counts.faqs, to: '/admin/faqs' },
               { k: 'Active companies', v: counts.companies, to: '/admin/companies' },
               { k: 'Credential documents', v: counts.credentials, to: '/admin/credentials' },
             ].map((row) => (
@@ -205,7 +231,7 @@ export default function Dashboard() {
             ))}
           </dl>
           <p className="mt-5 text-xs text-muted leading-relaxed">
-            Note: the public site currently reads companies and mission/vision copy from bundled data, not from these tables. See WEBSITE_AUDIT.md (product decisions).
+            Company pages use the bundled company data; the mission statement, FAQs and testimonials on the home page come from these tables.
           </p>
         </section>
       </div>

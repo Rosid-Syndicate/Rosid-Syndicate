@@ -44,6 +44,9 @@ const AdminCredentials = lazy(() => import('./pages/admin/Credentials'))
 const AdminBlog = lazy(() => import('./pages/admin/Blog'))
 const AdminBlogEditor = lazy(() => import('./pages/admin/BlogEditor'))
 const AdminCategories = lazy(() => import('./pages/admin/Categories'))
+const AdminTestimonials = lazy(() => import('./pages/admin/Testimonials'))
+const AdminFaqs = lazy(() => import('./pages/admin/Faqs'))
+const AdminUsers = lazy(() => import('./pages/admin/Users'))
 
 function RouteFallback() {
   return (
@@ -99,6 +102,14 @@ export function AppContent() {
                 <Route path="/admin/blog/create" element={<AdminBlogEditor />} />
                 <Route path="/admin/blog/edit/:id" element={<AdminBlogEditor />} />
                 <Route path="/admin/categories" element={<AdminCategories />} />
+                <Route path="/admin/testimonials" element={<AdminTestimonials />} />
+                <Route path="/admin/faqs" element={<AdminFaqs />} />
+                </Route>
+                {/* admin-only areas */}
+                <Route element={<ProtectedRoute requireRole="admin" />}>
+                  <Route element={<AdminLayout><Outlet /></AdminLayout>}>
+                    <Route path="/admin/users" element={<AdminUsers />} />
+                  </Route>
                 </Route>
               </Route>
             </Route>
