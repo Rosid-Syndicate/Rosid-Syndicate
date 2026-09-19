@@ -161,7 +161,7 @@ export default function Login() {
       <Seo title={mode === 'signin' ? 'Admin sign in' : 'Reset password'} path="/admin/login" noindex />
 
       {/* Brand panel — desktop only */}
-      <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-deep text-white p-12 xl:p-16" aria-hidden="true">
+      <aside className="relative hidden lg:flex lg:sticky lg:top-0 lg:h-screen lg:self-start flex-col justify-between overflow-hidden bg-deep text-white p-10 xl:p-14 [@media(max-height:700px)]:p-8" aria-hidden="true">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-48 -left-40 h-[34rem] w-[34rem] rounded-full bg-accent/20 blur-3xl" />
           <div className="absolute -bottom-56 -right-32 h-[36rem] w-[36rem] rounded-full bg-ink-700/70 blur-3xl" />
@@ -178,9 +178,9 @@ export default function Login() {
 
         <div className="relative max-w-xl">
           <p className="eyebrow-on-dark eyebrow">Welcome back</p>
-          <h2 className="mt-5 text-h1 font-display text-white">Everything the website needs, in one secure place.</h2>
-          <p className="mt-5 text-lead text-white/70">Manage inquiries, tenders, credentials and published content for the group's five companies.</p>
-          <ul className="mt-10 space-y-3">
+          <h2 className="mt-4 text-h1 font-display text-white [@media(max-height:760px)]:text-h2">Everything the website needs, in one secure place.</h2>
+          <p className="mt-4 text-lead text-white/70 [@media(max-height:760px)]:text-base">Manage inquiries, tenders, credentials and published content for the group's five companies.</p>
+          <ul className="mt-8 space-y-3 [@media(max-height:760px)]:hidden">
             {FEATURES.map(({ icon: Icon, title, text }) => (
               <li key={title} className="panel-dark flex items-start gap-4 p-4">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-sm bg-accent/15 text-accent">
@@ -202,10 +202,10 @@ export default function Login() {
       </aside>
 
       {/* Form column */}
-      <div className="relative flex flex-col items-center justify-center overflow-hidden px-5 py-8 sm:px-8">
+      <div className="relative flex flex-col items-center justify-center overflow-hidden px-5 py-5 sm:px-8">
         <div className="pointer-events-none absolute -top-40 -right-24 h-96 w-96 rounded-full bg-accent/10 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute inset-0 bg-dots-light bg-dots [mask-image:linear-gradient(to_bottom,black,transparent_60%)]" aria-hidden="true" />
-        <div className="relative mb-8 flex items-center gap-3 lg:hidden">
+        <div className="relative mb-6 flex items-center gap-3 lg:hidden">
           <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="h-10 w-10 rounded-sm bg-white p-1 shadow-card" />
           <div>
             <p className="text-sm font-bold text-ink">{SITE_NAME}</p>
@@ -214,24 +214,23 @@ export default function Login() {
         </div>
 
         <div className="relative w-full max-w-[26rem]">
-          <div className="card shadow-raised p-6 sm:p-8">
+          <div className="card shadow-raised p-6 sm:p-7">
             <div className="mb-6 text-center">
-              <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="mx-auto hidden h-11 w-11 lg:block" />
               {mode === 'signin' && (
                 <>
-                  <h1 className="mt-3 text-h2 text-ink">Welcome back</h1>
-                  <p className="mt-2 text-sm text-muted">Sign in to the admin console</p>
+                  <h1 className="text-[1.75rem] leading-tight tracking-[-0.02em] text-ink">Welcome back</h1>
+                  <p className="mt-1.5 text-sm text-muted">Sign in to the admin console</p>
                 </>
               )}
               {mode === 'reset' && (
                 <>
-                  <h1 className="mt-3 text-h2 text-ink">Reset your password</h1>
+                  <h1 className="text-[1.75rem] leading-tight tracking-[-0.02em] text-ink">Reset your password</h1>
                   <p className="mt-2 text-sm text-muted">Enter your work email and we will send you a link to choose a new password.</p>
                 </>
               )}
               {mode === 'reset-sent' && (
                 <>
-                  <h1 className="mt-3 text-h2 text-ink">Check your inbox</h1>
+                  <h1 className="text-[1.75rem] leading-tight tracking-[-0.02em] text-ink">Check your inbox</h1>
                   <p className="mt-2 text-sm text-muted">
                     If <span className="font-semibold text-ink">{email.trim()}</span> belongs to a staff account, a reset link is on its way. It expires after one hour.
                   </p>
@@ -356,10 +355,8 @@ export default function Login() {
             )}
           </div>
 
-          <p className="mt-5 text-center text-xs text-muted">
-            Authorised staff only. Need access? Ask an administrator to add you under Users &amp; roles.
-          </p>
-          <p className="mt-2 text-center text-xs">
+          <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center text-xs text-muted">
+            <span>Authorised staff only — need access? Ask an administrator.</span>
             <Link to="/" className="font-semibold text-ink underline-offset-4 hover:underline">
               ← Back to {SITE_HOST}
             </Link>
