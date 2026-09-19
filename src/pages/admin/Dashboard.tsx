@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [counts, setCounts] = useState<Counts>(EMPTY)
   const [recent, setRecent] = useState<InquiryItem[]>([])
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [errorDetail, setErrorDetail] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
   const load = useCallback(async (manual = false) => {
@@ -75,6 +76,7 @@ export default function Dashboard() {
       if (manual) toast.success('Dashboard refreshed')
     } catch (err) {
       console.warn('Dashboard load failed:', err)
+      setErrorDetail(err instanceof Error ? err.message : String((err as { message?: string })?.message ?? err))
       setState('error')
       if (manual) toast.error('Could not refresh the dashboard')
     } finally {
@@ -113,9 +115,10 @@ export default function Dashboard() {
       </header>
 
       {state === 'error' && (
-        <p role="alert" className="card border-l-4 border-l-danger p-4 text-sm text-danger">
-          The dashboard could not load data. If you were recently added as an admin, make sure your account is in the <code>admin_users</code> table.
-        </p>
+        <div role="alert" className="card border-l-4 border-l-danger p-4 text-sm text-danger space-y-1">
+          <p>The dashboard could not load data — check your connection, and if you were recently added as an admin, make sure your account is in the <code>admin_users</code> table.</p>
+          {errorDetail && <p className="text-xs text-muted font-mono break-all">{errorDetail}</p>}
+        </div>
       )}
 
       {/* Inquiry pipeline — the numbers an operator acts on */}
