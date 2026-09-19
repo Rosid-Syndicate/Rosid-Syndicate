@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom'
+import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
@@ -120,6 +121,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppContent />
+        <SpeedInsights />
       </AuthProvider>
     </BrowserRouter>
   )
