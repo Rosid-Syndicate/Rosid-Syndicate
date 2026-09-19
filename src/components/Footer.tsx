@@ -33,7 +33,7 @@ export default function Footer() {
       <div className="container pt-16 pb-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8">
           <div className="lg:col-span-4 space-y-6">
-            <Link to="/" className="inline-flex items-center gap-3 rounded-sm" aria-label={`${SITE_NAME} home`}>
+            <Link to="/" className="inline-flex items-center gap-3 rounded-sm">
               <picture>
                 <source type="image/webp" srcSet="/brand/logo-mark-128.webp" />
                 <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="h-12 w-auto bg-white rounded-sm p-1" />
@@ -41,6 +41,7 @@ export default function Footer() {
               <span className="leading-none">
                 <span className="block font-display font-black text-lg tracking-[0.18em] text-white">ROSID</span>
                 <span className="block text-[11px] font-semibold tracking-[0.14em] uppercase text-slate-400 mt-1">Syndicates Group</span>
+                <span className="sr-only">, home</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed max-w-sm text-slate-400">

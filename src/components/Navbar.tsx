@@ -144,7 +144,7 @@ export default function Navbar() {
       className={`fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md border-b border-line transition-shadow duration-base ${scrolled ? 'shadow-card' : ''}`}
     >
       <nav aria-label="Primary" className={`container flex items-center justify-between gap-6 transition-[padding] duration-base ${scrolled ? 'py-3' : 'py-4'}`}>
-        <Link to="/" className="flex items-center gap-3 shrink-0 rounded-sm" aria-label="Rosid Syndicates Group home">
+        <Link to="/" className="flex items-center gap-3 shrink-0 rounded-sm">
           <picture>
             <source type="image/webp" srcSet="/brand/logo-mark-128.webp 1x, /brand/logo-mark-192.webp 1.5x" />
             <img
@@ -156,9 +156,10 @@ export default function Navbar() {
               className={`w-auto transition-[height] duration-base ${scrolled ? 'h-10' : 'h-12'}`}
             />
           </picture>
-          <span className="hidden sm:block leading-none">
+          <span className="sr-only sm:not-sr-only sm:block leading-none">
             <span className="block font-display font-black text-lg tracking-[0.18em] text-ink">ROSID</span>
             <span className="block text-[11px] font-semibold tracking-[0.14em] uppercase text-muted mt-1">Syndicates Group</span>
+            <span className="sr-only">, home</span>
           </span>
         </Link>
 
