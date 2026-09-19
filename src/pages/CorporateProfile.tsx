@@ -76,7 +76,6 @@ export default function CorporateProfile() {
               <h4 className="font-bold text-ink mb-4 uppercase tracking-widest">Infrastructure & Advisory</h4>
               <ul className="space-y-2 text-slate-500">
                 <li className="flex items-start gap-2"><span className="text-fire font-bold">•</span> Appi Saipal Financial Solutions Pvt. Ltd.</li>
-                <li className="flex items-start gap-2"><span className="text-fire font-bold">•</span> Vharmal Singh Multipurpose and Construction Company Pvt. Ltd.</li>
               </ul>
             </div>
             <div className="bg-[#F4F4F2] p-6 border border-slate-200">

@@ -30,7 +30,7 @@ This repository contains the complete source code for the **official corporate w
 
 ## 🏗️ Subsidiary Companies
 
-The group operates through **6 specialized subsidiaries**:
+The group operates through **5 specialized subsidiaries**:
 
 | # | Company | Core Focus |
 |---|---------|------------|
@@ -39,7 +39,6 @@ The group operates through **6 specialized subsidiaries**:
 | 3 | **Kasthamandap Commerce and Company Pvt. Ltd.** | Nationwide Trading, Supply Tenders |
 | 4 | **B & C Exim Company Pvt. Ltd.** | Import/Export, Distribution Logistics |
 | 5 | **Deiyougo Enterprises Pvt. Ltd.** | Government Procurement, Commercial Sourcing |
-| 6 | **Vharmal Singh Multipurpose and Construction Company Pvt. Ltd.** | Civil Construction, Infrastructure Delivery |
 
 ---
 

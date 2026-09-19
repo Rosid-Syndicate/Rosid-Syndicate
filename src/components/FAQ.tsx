@@ -5,7 +5,7 @@ const faqs = [
   { q: 'What services does Rosid Syndicates Group provide?', a: 'We provide end-to-end solutions in heavy supply chain, financial advisory, public tender execution, and international trade across Nepal.' },
   { q: 'How do you support foreign contractors?', a: 'We act as your in-country operational, financial, and strategic partner, navigating Public Procurement Act compliance, local bank guarantees, and regulatory hurdles.' },
   { q: 'What financial advisory services do you offer?', a: 'Through Appi Saipal Financial Solutions, we offer bank syndication, debt structuring, and tripartite assurance for mega energy projects like hydropower and transmission lines.' },
-  { q: 'Do you handle civil construction?', a: 'Yes, Vharmal Singh Multipurpose and Construction Company handles earthworks, structural building, roads, and integrated supply & build contracts.' },
+  { q: 'Do you handle civil construction?', a: 'Yes, through our operating network and subsidiaries like Roshan Enterprises, we coordinate earthworks, structural building, roads, and integrated supply & build contracts.' },
   { q: 'How do you ensure financial integrity?', a: 'By bridging contractors, funding banks, and central authorities through transparent guarantee structures and continuous covenant monitoring.' },
 ]
 

@@ -20,7 +20,7 @@ export default function Companies() {
             transition={{ delay: 0.15 }} 
             className="text-lead text-slate-500 leading-relaxed border-l-4 border-[#FD7B00] pl-6"
           >
-            Rosid Syndicates Group brings together complementary capabilities across infrastructure, construction, procurement, financial advisory, trading, import/export, and logistics. Together, our six subsidiaries provide an end-to-end execution engine for mega-projects in Nepal.
+            Rosid Syndicates Group brings together complementary capabilities across infrastructure, construction, procurement, financial advisory, trading, import/export, and logistics. Together, our five subsidiaries provide an end-to-end execution engine for mega-projects in Nepal.
           </motion.p>
         </div>
 

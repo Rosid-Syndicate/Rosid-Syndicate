@@ -32,7 +32,7 @@ export default function Procurement() {
                 { title: 'Civil Supply Tenders', company: 'Roshan Enterprises', highlight: 'bg-ocean/10 text-ocean' },
                 { title: 'Commercial Procurement Sourcing', company: 'Kasthamandap Commerce', highlight: 'bg-ocean/10 text-ocean' },
                 { title: 'Import/Export Execution', company: 'B & C Exim Company', highlight: 'bg-ocean/10 text-ocean' },
-                { title: 'Infrastructure Execution', company: 'Vharmal Singh Construction', highlight: 'bg-fire/10 text-fire' },
+                { title: 'Equipment & Tender Sourcing', company: 'Deiyougo Enterprises', highlight: 'bg-ocean/10 text-ocean' },
                 { title: 'Foreign Bidder Support', company: 'Appi Saipal Financial Solutions', highlight: 'bg-fire/10 text-fire' },
               ].map((cap, i) => (
                 <div key={i} className="p-8 bg-white shadow-lg border border-slate-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group">

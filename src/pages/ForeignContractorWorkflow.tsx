@@ -137,7 +137,7 @@ export default function ForeignContractorWorkflow() {
               <span className="text-electric font-bold text-sm uppercase tracking-widest mb-4 block">03 / Logistics</span>
               <h3 className="text-2xl font-bold text-ink mb-6 pb-6 border-b border-slate-200">On-the-Ground Logistics & Material Supply</h3>
               <p className="text-ink/70 leading-relaxed mb-6">
-                Leveraging Roshan Enterprises and Vharmal Singh Construction for physical execution:
+                Leveraging Roshan Enterprises for physical execution:
               </p>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3 text-sm text-ink/80">

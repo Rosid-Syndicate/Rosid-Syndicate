@@ -12,7 +12,7 @@ export default function GroupStructure() {
 
   // Organize companies by division
   const infrastructureCompanies = companies.filter(c => 
-    ['appi-saipal-financial-solutions', 'vharmal-singh-construction'].includes(c.slug)
+    ['appi-saipal-financial-solutions'].includes(c.slug)
   )
   
   const commerceCompanies = companies.filter(c => 
@@ -159,7 +159,7 @@ export default function GroupStructure() {
                       <div>
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-[10px] font-mono text-blue-400 font-bold uppercase tracking-widest">Division: Trade / Logistics</span>
-                          <span className="text-[10px] font-mono text-slate-500 font-bold">0{i + 3}</span>
+                          <span className="text-[10px] font-mono text-slate-500 font-bold">0{i + 2}</span>
                         </div>
                         <h4 className="text-xl font-bold text-white uppercase tracking-wide group-hover:text-blue-400 transition-colors">{company.name}</h4>
                         <p className="text-xs text-slate-400 mt-2 font-medium leading-relaxed">{company.shortDescription}</p>

@@ -58,8 +58,7 @@ export default function PrivacyPolicy() {
               'Appi Saipal Financial Solutions Pvt. Ltd.',
               'Kasthamandap Commerce and Company Pvt. Ltd.',
               'B & C Exim Company Pvt. Ltd.',
-              'Deiyougo Enterprises Pvt. Ltd.',
-              'Vharmal Singh Multipurpose and Construction Company Pvt. Ltd.'
+              'Deiyougo Enterprises Pvt. Ltd.'
             ].map((sub) => (
               <div key={sub} className="p-4 bg-white border border-slate-200 shadow-sm flex items-center gap-3">
                 <span className="w-2 h-2 rounded-full bg-[#FD7B00]"></span>

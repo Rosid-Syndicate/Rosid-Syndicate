@@ -95,7 +95,8 @@ export const companies: Company[] = [
       'Industrial goods',
       'Trade items'
     ]
-  },
+  }
+  /*
   {
     name: 'Vharmal Singh Multipurpose and Construction Company Pvt. Ltd.',
     slug: 'vharmal-singh-construction',
@@ -114,4 +115,5 @@ export const companies: Company[] = [
       'Government-funded public works'
     ]
   }
+  */
 ]

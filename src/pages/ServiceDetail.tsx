@@ -8,7 +8,7 @@ const servicesData: Record<string, any> = {
   'construction-civil-infrastructure': {
     title: 'Construction & Civil Infrastructure',
     desc: 'Earthworks, structural building, roads, and integrated supply & build contracts.',
-    content: 'Through Vharmal Singh Multipurpose and Construction Company Pvt. Ltd., Rosid Syndicates Group executes major civil works including earthworks, structural building, roads, and critical civil infrastructure. We provide integrated supply and build contracts for government-funded public works and large-scale private developments.'
+    content: 'Through our specialized execution network and operating subsidiaries, Rosid Syndicates Group facilitates major civil works including earthworks, structural building, roads, and critical civil infrastructure. We provide integrated supply and build contracts for government-funded public works and large-scale private developments.'
   },
   'procurement-tender-execution': {
     title: 'Procurement & Tender Execution',

@@ -69,7 +69,7 @@ export const INITIAL_BLOG_POSTS: BlogPost[] = [
     id: 'post-1',
     title: "Welcome to Rosid Syndicates Group - Building Nepal's Future",
     slug: 'welcome-to-rosid-syndicates-group-building-nepals-future',
-    excerpt: "An introduction to Rosid Syndicates Group, our six specialized subsidiaries, unified execution engine, and vision for nation-building infrastructure.",
+    excerpt: "An introduction to Rosid Syndicates Group, our five specialized subsidiaries, unified execution engine, and vision for nation-building infrastructure.",
     content: `## Engineering Nationwide Economic & Industrial Progress
 
 **Rosid Syndicates Group** represents a premier multi-disciplinary conglomerate operating across the core pillars of Nepal's economic growth: heavy infrastructure development, strategic procurement, sovereign financial advisory, and cross-border commercial trade.
@@ -78,16 +78,15 @@ Headquartered in New Baneshwor, Kathmandu, our group operates as an integrated e
 
 ---
 
-### Our Operating Ecosystem: Six Specialized Subsidiaries
+### Our Operating Ecosystem: Five Specialized Subsidiaries
 
-Our strength lies in the synergistic alignment of six dedicated corporate subsidiaries:
+Our strength lies in the synergistic alignment of five dedicated corporate subsidiaries:
 
 1. **Roshan Enterprises Pvt. Ltd.** — Bulk supply of certified construction materials, public-private procurement, and national material distribution.
 2. **Appi Saipal Financial Solutions Pvt. Ltd.** — Financial closure, Class "A" bank consortium syndication, counter-guarantees, and risk mitigation for energy mega-projects.
 3. **Kasthamandap Commerce and Company Pvt. Ltd.** — Nationwide trading networks, domestic raw material sourcing, and supply-only civil tenders.
 4. **B & C Exim Company Pvt. Ltd.** — International import/export execution, customs navigation, warehousing, and last-mile logistics.
 5. **Deiyougo Enterprises Pvt. Ltd.** — Government procurement bidding, specialized industrial machinery sourcing, and tender fulfillment.
-6. **Vharmal Singh Multipurpose and Construction Company Pvt. Ltd.** — Earthworks, highway building, structural engineering, and integrated civil construction contracts.
 
 ---
 
@@ -222,7 +221,7 @@ International tenders in Nepal are regulated under the **Public Procurement Act,
 
 Partnering with a proven local conglomerate like **Rosid Syndicates Group** transforms overseas engineering power into successful in-country completion:
 
-- **Equipment & Heavy Machinery:** Access to crushing plants, dump trucks, and excavators through *Vharmal Singh Construction*.
+- **Equipment & Heavy Machinery:** Access to crushing plants, dump trucks, and excavators through our group logistics and machinery networks.
 - **Certified Bulk Materials:** Immediate bulk procurement of OPC 53 Grade cement, TMT rebar, and aggregate through *Roshan Enterprises*.
 - **Local Workforce & Community Liaisons:** Smooth social license to operate, land acquisition mediation, and site security.`,
     featured_image: 'https://images.unsplash.com/photo-1541888056262-563b7852f826?q=100&w=3840&auto=format&fit=crop',
