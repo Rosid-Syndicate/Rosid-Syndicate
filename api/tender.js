@@ -1,137 +1,128 @@
-import { createClient } from '@supabase/supabase-js'
+// POST /api/tender — tender / RFQ inquiry with optional document attachment.
+// See api/_lib/inquiry.js for the control pipeline and API_SECURITY_MATRIX.md
+// for the documented contract, limits and abuse controls.
+
+import { handleInquiry } from './_lib/inquiry.js'
+import { validateAttachment, MAX_ATTACHMENT_BYTES } from './_lib/attachments.js'
+import { cleanDate, cleanEmail, cleanLine, cleanPhone, cleanText, looksLikeLinkSpam, oneOf } from './_lib/validate.js'
+
+// Must match SUPPORT_OPTIONS in src/pages/TenderInquiry.tsx
+export const SUPPORT_OPTIONS = [
+  'Financial / Guarantee Support',
+  'Local JV / Partner',
+  'Procurement Support',
+  'Material Supply',
+  'Civil Execution',
+  'Foreign Contractor Support',
+  'Financial Closure',
+  'Other',
+]
+
+export const tenderSpec = {
+  name: 'tender',
+  // base64 attachment (2 MB → ~2.7 MB) + form fields
+  maxBodyBytes: Math.ceil(MAX_ATTACHMENT_BYTES * 1.4) + 64 * 1024,
+  allowedKeys: [
+    'companyName', 'country', 'contactPerson', 'email', 'phone',
+    'tenderName', 'tenderRef', 'projectSector', 'bidDeadline',
+    'requiredSupport', 'message', 'honeypot', 'attachment', 'turnstileToken',
+  ],
+
+  parse(body) {
+    const companyName = cleanLine(body.companyName, 160)
+    if (companyName.length < 2) return { ok: false, error: 'Please enter your company name.' }
+
+    const contactPerson = cleanLine(body.contactPerson, 120)
+    if (contactPerson.length < 2) return { ok: false, error: 'Please enter a contact person.' }
+
+    const email = cleanEmail(body.email)
+    if (!email) return { ok: false, error: 'Please enter a valid email address.' }
+
+    const phone = cleanPhone(body.phone)
+    if (phone === null) return { ok: false, error: 'Please enter a valid phone number.' }
+
+    const country = cleanLine(body.country, 80)
+    if (country.length < 2) return { ok: false, error: 'Please enter your country.' }
+
+    const tenderName = cleanLine(body.tenderName, 200)
+    const tenderRef = cleanLine(body.tenderRef, 100)
+    const projectSector = cleanLine(body.projectSector, 100)
+
+    const bidDeadline = cleanDate(body.bidDeadline)
+    if (bidDeadline === null) return { ok: false, error: 'Bid deadline must be a valid date (YYYY-MM-DD).' }
+
+    const requiredSupport = body.requiredSupport ? oneOf(body.requiredSupport, SUPPORT_OPTIONS) : ''
+    if (requiredSupport === null) return { ok: false, error: 'Please choose a valid support option.' }
+
+    const message = cleanText(body.message, 5000)
+    if (looksLikeLinkSpam(message)) return { ok: false, error: 'Messages with many links are not accepted. Please describe your request in plain text.' }
+
+    const att = validateAttachment(body.attachment)
+    if (!att.ok) return { ok: false, error: att.error }
+
+    return {
+      ok: true,
+      data: { companyName, contactPerson, email, phone, country, tenderName, tenderRef, projectSector, bidDeadline, requiredSupport, message },
+      attachment: att.attachment,
+    }
+  },
+
+  toRow(d) {
+    return {
+      inquiry_type: 'Tender / RFQ Inquiry',
+      name: d.contactPerson,
+      company_name: d.companyName,
+      email: d.email,
+      phone: d.phone || null,
+      subject: d.tenderName || `Tender: ${d.companyName}`,
+      message: [
+        `Country: ${d.country}`,
+        `Tender Ref: ${d.tenderRef || 'N/A'}`,
+        `Project Sector: ${d.projectSector || 'N/A'}`,
+        `Bid Deadline: ${d.bidDeadline || 'N/A'}`,
+        `Required Support: ${d.requiredSupport || 'N/A'}`,
+        '',
+        'Message:',
+        d.message || 'N/A',
+      ].join('\n'),
+      status: 'New',
+    }
+  },
+
+  toEmail(d) {
+    return {
+      subject: `New tender inquiry: ${d.companyName}${d.tenderName ? ` — ${d.tenderName}` : ''}`,
+      heading: 'New tender / RFQ inquiry',
+      intro: 'A prospective partner submitted the tender inquiry form on the corporate website.',
+      rows: [
+        ['Company', d.companyName],
+        ['Country', d.country],
+        ['Contact person', d.contactPerson],
+        ['Email', d.email],
+        ['Phone', d.phone],
+        ['Tender / project', d.tenderName],
+        ['Tender reference', d.tenderRef],
+        ['Project sector', d.projectSector],
+        ['Bid deadline', d.bidDeadline],
+        ['Required support', d.requiredSupport],
+      ],
+      message: d.message || 'No additional message.',
+    }
+  },
+
+  // Tender submissions are rarer and heavier (attachments) than contact messages.
+  limits: [
+    { name: 'ip-burst', limit: 3, windowSec: 60 * 60, key: ({ ip }) => `tender:ip:${ip}` },
+    { name: 'ip-daily', limit: 8, windowSec: 24 * 60 * 60, key: ({ ip }) => `tender:ipd:${ip}` },
+    { name: 'email-daily', limit: 4, windowSec: 24 * 60 * 60, key: ({ emailHash }) => `tender:em:${emailHash}` },
+  ],
+}
 
 export default async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Credentials', true)
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  )
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end()
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
   try {
-    const { 
-      companyName, country, contactPerson, email, phone, 
-      tenderName, tenderRef, projectSector, bidDeadline, 
-      requiredSupport, message, honeypot, attachment, turnstileToken 
-    } = req.body || {}
-
-    // Basic spam protection (honeypot)
-    if (honeypot) {
-      return res.status(200).json({ success: true, message: 'Message sent successfully.' })
-    }
-
-    if (!companyName || !contactPerson || !email) {
-      return res.status(400).json({ error: 'Missing required fields (Company, Contact Person, Email)' })
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email address' })
-    }
-
-    // Verify Turnstile Token (if configured with non-dummy key)
-    const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA'
-    if (turnstileToken && TURNSTILE_SECRET && TURNSTILE_SECRET !== '1x0000000000000000000000000000000AA') {
-      try {
-        const turnstileRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            secret: TURNSTILE_SECRET,
-            response: turnstileToken,
-          }).toString(),
-        })
-        const turnstileData = await turnstileRes.json()
-        if (!turnstileData.success) {
-          return res.status(403).json({ error: 'Security verification failed. Please try again.' })
-        }
-      } catch (err) {
-        console.warn('Turnstile Verification Notice:', err)
-      }
-    }
-
-    // Connect to Supabase
-    const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://mlfakixbqzgttwzqinvl.supabase.co'
-    const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sZmFraXhicXpndHR3enFpbnZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MzUyNjAsImV4cCI6MjEwMzMxMTI2MH0.NVFZYl5sMuYa-mWMt7In-MqGSCVvLRf-KUOFn9eIJJk'
-
-    if (SUPABASE_URL && SUPABASE_KEY) {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-      const { error: dbError } = await supabase.from('inquiries').insert({
-        inquiry_type: 'Tender / RFQ Inquiry',
-        name: contactPerson,
-        company_name: companyName,
-        email,
-        phone: phone || '',
-        subject: tenderName || `Tender: ${companyName}`,
-        message: `Country: ${country || 'N/A'}\nTender Ref: ${tenderRef || 'N/A'}\nProject Sector: ${projectSector || 'N/A'}\nBid Deadline: ${bidDeadline || 'N/A'}\nRequired Support: ${requiredSupport || 'N/A'}\n\nMessage:\n${message || 'N/A'}`,
-        status: 'New'
-      })
-      if (dbError) {
-        console.error('Supabase Insert Notice:', dbError.message)
-      }
-    }
-
-    // Optional Email Notification via Resend
-    const API_KEY = process.env.RESEND_API_KEY
-    const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'admin.rosid@gmail.com'
-
-    if (API_KEY && CONTACT_EMAIL) {
-      try {
-        let attachments = []
-        if (attachment && attachment.content && attachment.filename) {
-          attachments.push({
-            filename: attachment.filename,
-            content: attachment.content
-          })
-        }
-
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            from: 'Rosid Tender Desk <onboarding@resend.dev>',
-            to: [CONTACT_EMAIL],
-            subject: `New Tender Inquiry: ${companyName}`,
-            html: `
-              <h3>New Tender / RFQ Inquiry</h3>
-              <p><strong>Company Name:</strong> ${companyName}</p>
-              <p><strong>Country:</strong> ${country}</p>
-              <p><strong>Contact Person:</strong> ${contactPerson}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Phone:</strong> ${phone || 'N/A'}</p>
-              <hr/>
-              <p><strong>Tender/Project Name:</strong> ${tenderName || 'N/A'}</p>
-              <p><strong>Tender Reference:</strong> ${tenderRef || 'N/A'}</p>
-              <p><strong>Project Sector:</strong> ${projectSector || 'N/A'}</p>
-              <p><strong>Bid Deadline:</strong> ${bidDeadline || 'N/A'}</p>
-              <p><strong>Required Support:</strong> ${requiredSupport || 'N/A'}</p>
-              <hr/>
-              <p><strong>Message:</strong><br/>${(message || 'No additional message.').replace(/\n/g, '<br/>')}</p>
-            `,
-            attachments: attachments.length > 0 ? attachments : undefined
-          })
-        })
-      } catch (emailErr) {
-        console.warn('Resend Tender Email Notice:', emailErr)
-      }
-    }
-
-    return res.status(200).json({ success: true, message: 'Message sent successfully.' })
+    return await handleInquiry(req, res, tenderSpec)
   } catch (error) {
-    console.error('Tender Handler Error:', error)
+    console.error(JSON.stringify({ ts: new Date().toISOString(), event: 'tender.unhandled', error: String(error?.message || error) }))
     return res.status(500).json({ error: 'An unexpected error occurred.' })
   }
 }

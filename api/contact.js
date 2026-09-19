@@ -1,118 +1,90 @@
-import { createClient } from '@supabase/supabase-js'
+// POST /api/contact — public contact form.
+// See api/_lib/inquiry.js for the control pipeline and API_SECURITY_MATRIX.md
+// for the documented contract, limits and abuse controls.
+
+import { handleInquiry } from './_lib/inquiry.js'
+import { cleanEmail, cleanLine, cleanPhone, cleanText, looksLikeLinkSpam, oneOf } from './_lib/validate.js'
+
+// Must match INQUIRY_TYPES in src/components/Contact.tsx
+export const INQUIRY_TYPES = [
+  'General Inquiry',
+  'Infrastructure & Construction',
+  'Tender / Procurement',
+  'Foreign Contractor Support',
+  'Financial Advisory',
+  'Hydropower / Transmission',
+  'Trade & Supply',
+]
+
+export const contactSpec = {
+  name: 'contact',
+  maxBodyBytes: 32 * 1024,
+  allowedKeys: ['name', 'company', 'email', 'phone', 'inquiryType', 'message', 'honeypot', 'turnstileToken'],
+
+  parse(body) {
+    const name = cleanLine(body.name, 120)
+    if (name.length < 2) return { ok: false, error: 'Please enter your name.' }
+
+    const email = cleanEmail(body.email)
+    if (!email) return { ok: false, error: 'Please enter a valid email address.' }
+
+    const phone = cleanPhone(body.phone)
+    if (phone === null) return { ok: false, error: 'Please enter a valid phone number.' }
+
+    const company = cleanLine(body.company, 160)
+
+    const inquiryType = body.inquiryType ? oneOf(body.inquiryType, INQUIRY_TYPES) : 'General Inquiry'
+    if (!inquiryType) return { ok: false, error: 'Please choose a valid inquiry type.' }
+
+    const message = cleanText(body.message, 5000)
+    if (message.length < 10) return { ok: false, error: 'Please tell us a little more about your inquiry (at least 10 characters).' }
+    if (looksLikeLinkSpam(message)) return { ok: false, error: 'Messages with many links are not accepted. Please describe your request in plain text.' }
+
+    return { ok: true, data: { name, email, phone, company, inquiryType, message }, attachment: null }
+  },
+
+  toRow(d) {
+    return {
+      inquiry_type: d.inquiryType,
+      name: d.name,
+      company_name: d.company || null,
+      email: d.email,
+      phone: d.phone || null,
+      subject: d.inquiryType,
+      message: d.message,
+      status: 'New',
+    }
+  },
+
+  toEmail(d) {
+    return {
+      subject: `New inquiry: ${d.inquiryType} — ${d.name}`,
+      heading: 'New website inquiry',
+      intro: 'A visitor submitted the contact form on the corporate website.',
+      rows: [
+        ['Name', d.name],
+        ['Company', d.company],
+        ['Email', d.email],
+        ['Phone', d.phone],
+        ['Inquiry type', d.inquiryType],
+      ],
+      message: d.message,
+    }
+  },
+
+  // Business flow: a genuine visitor sends one, occasionally two, messages.
+  limits: [
+    { name: 'ip-burst', limit: 5, windowSec: 60 * 60, key: ({ ip }) => `contact:ip:${ip}` },
+    { name: 'ip-daily', limit: 15, windowSec: 24 * 60 * 60, key: ({ ip }) => `contact:ipd:${ip}` },
+    { name: 'email-daily', limit: 5, windowSec: 24 * 60 * 60, key: ({ emailHash }) => `contact:em:${emailHash}` },
+  ],
+}
 
 export default async function handler(req, res) {
-  // CORS Headers
-  res.setHeader('Access-Control-Allow-Credentials', true)
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  )
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end()
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
-  }
-
   try {
-    const { name, company, email, phone, inquiryType, message, honeypot, turnstileToken } = req.body || {}
-
-    // Basic spam protection (honeypot)
-    if (honeypot) {
-      return res.status(200).json({ success: true, message: 'Message sent successfully.' })
-    }
-
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: 'Missing required fields (Name, Email, Message)' })
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ error: 'Invalid email address' })
-    }
-
-    // Verify Turnstile Token (if configured with non-dummy key)
-    const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA'
-    if (turnstileToken && TURNSTILE_SECRET && TURNSTILE_SECRET !== '1x0000000000000000000000000000000AA') {
-      try {
-        const turnstileRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            secret: TURNSTILE_SECRET,
-            response: turnstileToken,
-          }).toString(),
-        })
-        const turnstileData = await turnstileRes.json()
-        if (!turnstileData.success) {
-          return res.status(403).json({ error: 'Security verification failed. Please try again.' })
-        }
-      } catch (err) {
-        console.warn('Turnstile Verification Notice:', err)
-      }
-    }
-
-    // Connect to Supabase
-    const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://mlfakixbqzgttwzqinvl.supabase.co'
-    const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sZmFraXhicXpndHR3enFpbnZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc3MzUyNjAsImV4cCI6MjEwMzMxMTI2MH0.NVFZYl5sMuYa-mWMt7In-MqGSCVvLRf-KUOFn9eIJJk'
-
-    if (SUPABASE_URL && SUPABASE_KEY) {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
-      const { error: dbError } = await supabase.from('inquiries').insert({
-        inquiry_type: inquiryType || 'General Inquiry',
-        name,
-        company_name: company || '',
-        email,
-        phone: phone || '',
-        subject: inquiryType || 'Website Contact Form',
-        message,
-        status: 'New'
-      })
-      if (dbError) {
-        console.error('Supabase Insert Notice:', dbError.message)
-      }
-    }
-
-    // Optional Email Notification via Resend
-    const API_KEY = process.env.RESEND_API_KEY
-    const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'admin.rosid@gmail.com'
-
-    if (API_KEY && CONTACT_EMAIL) {
-      try {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            from: 'Rosid Portal <onboarding@resend.dev>',
-            to: [CONTACT_EMAIL],
-            subject: `New Inquiry: ${inquiryType || 'General'} from ${name}`,
-            html: `
-              <h3>New Inquiry via Rosid Syndicates Group Website</h3>
-              <p><strong>Name:</strong> ${name}</p>
-              <p><strong>Company:</strong> ${company || 'N/A'}</p>
-              <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Phone:</strong> ${phone || 'N/A'}</p>
-              <p><strong>Inquiry Type:</strong> ${inquiryType || 'General'}</p>
-              <p><strong>Message:</strong><br/>${message.replace(/\n/g, '<br/>')}</p>
-            `
-          })
-        })
-      } catch (emailErr) {
-        console.warn('Resend Email Notice:', emailErr)
-      }
-    }
-
-    return res.status(200).json({ success: true, message: 'Message sent successfully.' })
+    return await handleInquiry(req, res, contactSpec)
   } catch (error) {
-    console.error('Contact Handler Error:', error)
+    console.error(JSON.stringify({ ts: new Date().toISOString(), event: 'contact.unhandled', error: String(error?.message || error) }))
     return res.status(500).json({ error: 'An unexpected error occurred.' })
   }
 }
