@@ -36,6 +36,7 @@ const AdminArea = lazy(() => import('./components/AdminArea'))
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'))
 const AdminLayout = lazy(() => import('./components/AdminLayout'))
 const AdminLogin = lazy(() => import('./pages/admin/Login'))
+const AdminResetPassword = lazy(() => import('./pages/admin/ResetPassword'))
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
 const AdminInquiries = lazy(() => import('./pages/admin/Inquiries'))
 const AdminCompanies = lazy(() => import('./pages/admin/Companies'))
@@ -91,6 +92,7 @@ export function AppContent() {
             <Route element={<AdminArea />}>
               <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/reset-password" element={<AdminResetPassword />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<AdminLayout><Outlet /></AdminLayout>}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />

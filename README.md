@@ -79,7 +79,8 @@ Or use `vercel dev` with the Vercel CLI.
 See `.env.example`. Public values are `VITE_`-prefixed and bundled; server
 secrets (`TURNSTILE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
 `UPSTASH_*`) are read only by the functions in `api/`. The production build
-fails fast if the public Supabase variables are missing.
+fails fast if the public Supabase variables are missing. `VITE_AUTH_GOOGLE_SIGNIN=true`
+shows "Continue with Google" on the admin login once the provider is enabled in Supabase.
 
 ## Database
 

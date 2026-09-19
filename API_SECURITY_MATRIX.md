@@ -52,7 +52,10 @@ are explicit (no `select('*')` on public pages except the single-post fetch).
 
 | Endpoint | Used by | Control |
 |---|---|---|
-| `POST /auth/v1/token?grant_type=password` | `/admin/login` | Supabase rate limits; generic UI error |
+| `POST /auth/v1/token?grant_type=password` | `/admin/login` | Supabase rate limits; generic UI error; Turnstile token forwarded when configured |
+| `POST /auth/v1/recover` | "Forgot password?" on `/admin/login` | Supabase rate limits (default 1 email / 60 s per address); UI response identical for unknown addresses |
+| `PUT /auth/v1/user` | `/admin/reset-password` (new password) | requires the recovery session from the emailed link; ≥10 characters enforced in UI |
+| `GET /auth/v1/authorize?provider=google` | `/admin/login` only when `VITE_AUTH_GOOGLE_SIGNIN=true` | provider must be enabled in Supabase; role still comes from `admin_users` |
 | `POST /auth/v1/signup` | **not used by the app** | must be disabled in the dashboard (finding C-1) |
 | `POST /auth/v1/logout` | admin sign-out | — |
 

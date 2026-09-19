@@ -256,6 +256,14 @@ no optimistic success. Destructive actions go through `useConfirm()` with
 `tone: 'danger'`. Ordered lists (testimonials, FAQs) use move up/down buttons
 rather than drag-and-drop so ordering works with a keyboard.
 
+Sign-in (`src/pages/admin/Login.tsx`): split layout at `lg` — a `deep` brand
+panel (logo, eyebrow, one headline, three capability cards, no statistics) and
+a centred `card` with the form; below `lg` the panel is dropped and a compact
+brand header sits above the card. Password fields get a show/hide toggle
+(`aria-pressed`), errors render as a `danger-soft` banner directly above the
+primary button, and optional elements (Turnstile, Google) only appear when
+configured. The reset-link landing page reuses the same card.
+
 ---
 
 ## 10. Motion

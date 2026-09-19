@@ -76,7 +76,10 @@ Cloudflare outage degrades to honeypot + rate limits instead of blocking leads.
 | Surface | Control | Status |
 |---|---|---|
 | Sign-up | Must be disabled in Supabase dashboard (public sign-up currently enabled) | **Manual** |
-| Sign-in | Supabase Auth defaults (bcrypt, JWT, refresh). Generic error message in UI. Supabase's built-in auth rate limits apply | Code done; review dashboard limits |
+| Sign-in | Supabase Auth defaults (bcrypt, JWT, refresh). Generic error message in UI; the "return to" path after login is validated to stay under `/admin`. Supabase's built-in auth rate limits apply | Code done; review dashboard limits |
+| Sign-in CAPTCHA | When `VITE_TURNSTILE_SITE_KEY` is set the login and reset forms render Turnstile and forward the token (`captchaToken`) to Supabase Auth. Enforcement happens in Supabase: Authentication → Attack protection → Enable CAPTCHA (Turnstile) with the matching secret | Code done; **Manual** to enforce |
+| Password reset | "Forgot password?" calls `resetPasswordForEmail` with the same response whether or not the address exists; the link lands on `/admin/reset-password`, which only shows the new-password form while the recovery session is present (min. 10 characters; expired/reused links get a clear message) | Code done; redirect URL must be allow-listed (§10) |
+| Google sign-in | Hidden unless `VITE_AUTH_GOOGLE_SIGNIN=true`. Requires the Google provider in Supabase; the allow-list (`admin_users`) still decides who gets a role, and with sign-ups disabled only existing auth users can use it | Off by default |
 | Staff membership & roles | `public.admin_users` (email-based rows, `role` = `admin` or `editor`, `is_active`); `staff_role()`, `is_admin()`, `is_staff()` used by every RLS policy. Rows link to the auth user on first sign-in (`link_admin_user()`); a trigger prevents removing or demoting the last active admin | Migration |
 | Editor role | Content tables only (blog posts, categories, testimonials, FAQs, site content). No inquiries, credentials, companies or staff management — enforced by RLS and mirrored in the admin navigation | Migration + code |
 | Table access (anon) | SELECT on published/public rows only; INSERT on `inquiries` with `status = 'New'` (until `20260919_inquiries_api_only.sql`) | Migration |
@@ -177,9 +180,11 @@ or public pages for verified search bots.
 
 1. Apply `supabase/migrations/20260919_admin_authorization.sql`, then `20260919_admin_roles_content.sql` in the SQL editor.
 2. Review `public.admin_users` (email, role, is_active); remove non-staff accounts. Add colleagues from Admin → Users & roles, then create their login in Authentication → Users — the browser never holds a service key, so it cannot create auth accounts itself.
-3. Authentication → Providers → Email → disable new sign-ups; consider enabling Auth captcha.
-4. Add `SUPABASE_SERVICE_ROLE_KEY` to Vercel, then apply `20260919_inquiries_api_only.sql`.
-5. Optional: `UPDATE storage.buckets SET public = false WHERE id = 'credentials_files'` after confirming `credentials.file_url` values are storage paths (the public page then needs signed URLs — small change in `src/pages/Credentials.tsx`).
+3. Authentication → Providers → Email → disable new sign-ups.
+4. Authentication → URL Configuration → set Site URL to the production origin and add `<origin>/admin/reset-password` (plus preview origins if used) to Redirect URLs, otherwise reset links fall back to the Site URL.
+5. Optional: Authentication → Attack protection → Enable CAPTCHA with the Turnstile secret used for the forms; the login page already sends the token when `VITE_TURNSTILE_SITE_KEY` is set.
+6. Add `SUPABASE_SERVICE_ROLE_KEY` to Vercel, then apply `20260919_inquiries_api_only.sql`.
+7. Optional: `UPDATE storage.buckets SET public = false WHERE id = 'credentials_files'` after confirming `credentials.file_url` values are storage paths (the public page then needs signed URLs — small change in `src/pages/Credentials.tsx`).
 
 ---
 
