@@ -12,7 +12,7 @@ import { INITIAL_CATEGORIES } from '../../data/blog'
 
 const PRESET_IMAGES = [
   { label: 'Corporate & architecture', url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab' },
-  { label: 'Infrastructure & construction', url: 'https://images.unsplash.com/photo-1541888056262-563b7852f826' },
+  { label: 'Infrastructure & construction', url: 'https://images.unsplash.com/photo-1527335988388-b40ee248d80c' },
   { label: 'Finance & banking', url: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a' },
   { label: 'Energy & hydropower', url: 'https://images.unsplash.com/photo-1497366216548-37526070297c' },
 ]

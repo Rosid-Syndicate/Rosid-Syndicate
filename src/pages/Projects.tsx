@@ -27,7 +27,7 @@ export default function ProjectsPage() {
         title="Sectors & projects"
         subtitle="Where we work"
         lead="The infrastructure and trade sectors the group serves, and the role each operating company plays."
-        image="https://images.unsplash.com/photo-1504307651254-35680f356f12"
+        image="https://images.unsplash.com/photo-1568671566370-49b36c5c7805"
       />
 
       <section className="container py-16 lg:py-24" aria-labelledby="sectors-list-heading">

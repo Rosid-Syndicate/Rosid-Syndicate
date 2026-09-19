@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { services } from '../data/services'
-import { unsplash, unsplashSrcSet } from '../lib/images'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 
 /**
  * Capability grid. Each card is a real link to its /service/:slug page (the
@@ -35,6 +35,7 @@ export default function Services() {
                   <img
                     src={unsplash(s.image, { w: 640, q: 65 })}
                     srcSet={unsplashSrcSet(s.image, [480, 640, 960], 65)}
+                    onError={hideBrokenImage}
                     sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
                     width={640}
                     height={400}

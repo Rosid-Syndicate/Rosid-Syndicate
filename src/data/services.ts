@@ -26,7 +26,7 @@ export const services: Service[] = [
       'Through its execution network and operating subsidiaries, Rosid Syndicates Group facilitates major civil works including earthworks, structural building, roads and critical civil infrastructure.',
       'We provide integrated supply-and-build contracts for government-funded public works and large-scale private developments, combining certified material supply with on-site execution support.',
     ],
-    image: 'https://images.unsplash.com/photo-1541888056262-563b7852f826',
+    image: 'https://images.unsplash.com/photo-1527335988388-b40ee248d80c',
     companies: ['roshan-enterprises'],
     related: [
       { label: 'Procurement & tender centre', to: '/procurement' },

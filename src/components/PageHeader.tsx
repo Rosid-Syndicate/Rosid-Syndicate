@@ -16,7 +16,7 @@ interface PageHeaderProps {
   titleAs?: 'h1' | 'p'
 }
 
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1541888056262-563b7852f826'
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1527335988388-b40ee248d80c'
 
 /**
  * Page hero for inner pages. The photograph is a real <img> with srcset (was a

@@ -7,6 +7,8 @@
  * size we actually render and let `auto=format` negotiate AVIF/WebP.
  */
 
+import type { SyntheticEvent } from 'react'
+
 const UNSPLASH_HOST = 'images.unsplash.com'
 
 /** Strip existing query params from an Unsplash URL and apply ours. */
@@ -36,4 +38,30 @@ export function unsplashSrcSet(url: string, widths: number[] = [480, 768, 1024, 
 /** Background-image CSS value at a sensible size for full-bleed sections. */
 export function bgImage(url: string, w = 1920): string {
   return `url("${unsplash(url, { w, q: 65 })}")`
+}
+
+/**
+ * `onError` handler for remote photos. Stock images get removed upstream from
+ * time to time (four Unsplash ids used by this site vanished in 2026); rather
+ * than a broken-image icon the element goes invisible and the container's brand
+ * background shows through. Layout is preserved because the box is kept.
+ */
+export function hideBrokenImage(e: SyntheticEvent<HTMLImageElement>): void {
+  hideImageElement(e.currentTarget)
+}
+
+export function hideImageElement(img: HTMLImageElement): void {
+  img.removeAttribute('srcset')
+  img.style.visibility = 'hidden'
+  img.setAttribute('data-broken', '')
+}
+
+/**
+ * Images in pre-rendered markup can fail before React hydrates, so their
+ * `error` event is never seen by `onError`. Called once after hydration.
+ */
+export function sweepBrokenImages(root: ParentNode = document): void {
+  root.querySelectorAll('img').forEach((img) => {
+    if (img.complete && img.naturalWidth === 0 && img.getAttribute('src')) hideImageElement(img)
+  })
 }

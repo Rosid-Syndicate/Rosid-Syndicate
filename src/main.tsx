@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { sweepBrokenImages } from './lib/images'
 
 // Web fonts are attached after the app script runs so the stylesheet never
 // blocks first render (the <link rel="preload"> in index.html has already
@@ -25,6 +26,9 @@ const app = (
 // every other route is served from the empty app.html shell.
 if (root.hasChildNodes()) {
   hydrateRoot(root, app)
+  // Photos in the pre-rendered markup may have failed before React attached
+  // its onError handlers; hide any that did so no broken-image icon remains.
+  window.addEventListener('load', () => sweepBrokenImages(root), { once: true })
 } else {
   createRoot(root).render(app)
 }

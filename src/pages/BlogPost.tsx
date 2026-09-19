@@ -8,7 +8,7 @@ import NotFound from './NotFound'
 import { formatDate } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import { renderMarkdown } from '../lib/markdown'
-import { unsplash, unsplashSrcSet } from '../lib/images'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 import { companies } from '../data/companies'
 import { BlogPost as BlogPostType, INITIAL_BLOG_POSTS } from '../data/blog'
 import { SITE_NAME, SITE_URL, absoluteUrl } from '../config/site'
@@ -156,6 +156,7 @@ export default function BlogPost() {
               <img
                 src={unsplash(post.featured_image, { w: 1200, q: 70 })}
                 srcSet={unsplashSrcSet(post.featured_image, [640, 960, 1200, 1600], 70)}
+                onError={hideBrokenImage}
                 sizes="(min-width: 1024px) 60vw, 100vw"
                 width={1200}
                 height={675}

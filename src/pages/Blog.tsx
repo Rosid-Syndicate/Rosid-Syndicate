@@ -6,7 +6,7 @@ import Seo from '../components/Seo'
 import BlogCard from '../components/BlogCard'
 import { formatDate } from '../lib/format'
 import { supabase } from '../lib/supabase'
-import { unsplash, unsplashSrcSet } from '../lib/images'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 import { BlogPost, BlogCategory, INITIAL_BLOG_POSTS, INITIAL_CATEGORIES } from '../data/blog'
 
 export default function Blog() {
@@ -108,6 +108,7 @@ export default function Blog() {
               <img
                 src={unsplash(featuredPost.featured_image, { w: 1200, q: 65 })}
                 srcSet={unsplashSrcSet(featuredPost.featured_image, [640, 960, 1200, 1600], 65)}
+                onError={hideBrokenImage}
                 sizes="(min-width: 1024px) 58vw, 100vw"
                 loading="eager"
                 decoding="async"

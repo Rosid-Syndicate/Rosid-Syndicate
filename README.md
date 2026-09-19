@@ -71,6 +71,7 @@ Or use `vercel dev` with the Vercel CLI.
 | `npm run check` | `lint` + `typecheck` + `check:seo` + `test` |
 | `npm test` | API pipeline tests (`node --test`) |
 | `npm run check:seo` | fails if React routes, `vercel.json` rewrites, the sitemap manifest and data slugs drift, or if hash links / 4K images / `dangerouslySetInnerHTML` reappear |
+| `npm run check:images` | verifies every stock photo referenced in `src/` still exists upstream (needs network; run before releases) |
 | `npm run images` | regenerate optimised brand and photo assets into `public/brand` and `public/img` |
 | `npm run serve` | local Vercel emulator for the built site |
 

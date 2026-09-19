@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CalendarIcon, ClockIcon } from '@heroicons/react/24/outline'
 import type { BlogPost } from '../data/blog'
-import { unsplash, unsplashSrcSet } from '../lib/images'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 import { formatDate } from '../lib/format'
 
 
@@ -14,6 +14,7 @@ export default function BlogCard({ post, headingLevel = 'h3' }: { post: BlogPost
         <img
           src={unsplash(post.featured_image, { w: 640, q: 65 })}
           srcSet={unsplashSrcSet(post.featured_image, [480, 640, 960], 65)}
+          onError={hideBrokenImage}
           sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 100vw"
           width={640}
           height={400}

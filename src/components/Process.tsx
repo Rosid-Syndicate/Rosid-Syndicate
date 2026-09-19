@@ -1,4 +1,4 @@
-import { unsplash, unsplashSrcSet } from '../lib/images'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 
 const PROCESS_IMAGE = 'https://images.unsplash.com/photo-1503387762-592deb58ef4e'
 
@@ -34,6 +34,7 @@ export default function Process() {
             <img
               src={unsplash(PROCESS_IMAGE, { w: 960, q: 70 })}
               srcSet={unsplashSrcSet(PROCESS_IMAGE, [640, 960, 1200], 70)}
+              onError={hideBrokenImage}
               sizes="40vw"
               width={960}
               height={1200}

@@ -224,7 +224,7 @@ Partnering with a proven local conglomerate like **Rosid Syndicates Group** tran
 - **Equipment & Heavy Machinery:** Access to crushing plants, dump trucks, and excavators through our group logistics and machinery networks.
 - **Certified Bulk Materials:** Immediate bulk procurement of OPC 53 Grade cement, TMT rebar, and aggregate through *Roshan Enterprises*.
 - **Local Workforce & Community Liaisons:** Smooth social license to operate, land acquisition mediation, and site security.`,
-    featured_image: 'https://images.unsplash.com/photo-1541888056262-563b7852f826',
+    featured_image: 'https://images.unsplash.com/photo-1527335988388-b40ee248d80c',
     category: 'Foreign Contractors',
     category_slug: 'foreign-contractors',
     author: 'Roshan Pandey & Advisory Board',

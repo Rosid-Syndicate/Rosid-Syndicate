@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import type { Company } from '../data/companies'
-import { unsplash, unsplashSrcSet } from '../lib/images'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 
 export default function CompanyCard({ company, index }: { company: Company; index: number }) {
   const isLocal = company.image.startsWith('/')
@@ -13,6 +13,7 @@ export default function CompanyCard({ company, index }: { company: Company; inde
       <img
         src={isLocal ? '/img/hydropower-plant-1024.webp' : unsplash(company.image, { w: 800, q: 65 })}
         srcSet={isLocal ? '/img/hydropower-plant-640.webp 640w, /img/hydropower-plant-1024.webp 1024w' : unsplashSrcSet(company.image, [480, 800, 1200], 65)}
+        onError={hideBrokenImage}
         sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 100vw"
         loading="lazy"
         decoding="async"

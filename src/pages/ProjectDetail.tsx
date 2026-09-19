@@ -4,6 +4,7 @@ import { projects } from '../data/projects'
 import PageHeader from '../components/PageHeader'
 import Seo from '../components/Seo'
 import NotFound from './NotFound'
+import { hideBrokenImage } from '../lib/images'
 
 export default function ProjectDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -59,7 +60,7 @@ export default function ProjectDetail() {
             <ul className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {project.images.slice(1).map((img, i) => (
                 <li key={img} className="aspect-[4/3] overflow-hidden rounded-sm">
-                  <img src={img} alt={`${project.title} — image ${i + 2}`} loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                  <img src={img} alt={`${project.title} — image ${i + 2}`} loading="lazy" decoding="async" onError={hideBrokenImage} className="h-full w-full object-cover" />
                 </li>
               ))}
             </ul>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CheckIcon } from '@heroicons/react/20/solid'
-import { unsplash, unsplashSrcSet } from '../lib/images'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 
 const ABOUT_IMAGE = 'https://images.unsplash.com/photo-1497366216548-37526070297c'
 
@@ -50,6 +50,7 @@ export default function About({ mission = DEFAULT_MISSION }: { mission?: string 
               <img
                 src={unsplash(ABOUT_IMAGE, { w: 1200, q: 70 })}
                 srcSet={unsplashSrcSet(ABOUT_IMAGE, [640, 960, 1200, 1600], 70)}
+                onError={hideBrokenImage}
                 sizes="(min-width: 1024px) 45vw, 100vw"
                 width={1200}
                 height={900}

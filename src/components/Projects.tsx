@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import { sectors } from '../data/sectors'
-import { unsplash, unsplashSrcSet } from '../lib/images'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 
 /**
  * Sector grid (home). Cards link to the relevant capability or company page.
@@ -27,6 +27,7 @@ export default function Projects() {
                 <img
                   src={unsplash(s.image, { w: 1000, q: 65 })}
                   srcSet={unsplashSrcSet(s.image, [640, 1000, 1400], 65)}
+                  onError={hideBrokenImage}
                   sizes={s.span === 'wide' ? '(min-width: 768px) 66vw, 100vw' : '(min-width: 768px) 33vw, 100vw'}
                   loading="lazy"
                   decoding="async"

@@ -13,7 +13,7 @@ export const companies: Company[] = [
     slug: 'roshan-enterprises',
     shortDescription: 'Bulk supply of certified construction materials and public-private procurement.',
     coreScope: 'Construction Supply, Public-Private Procurement, Retail & Hospitality',
-    image: 'https://images.unsplash.com/photo-1541888056262-563b7852f826',
+    image: 'https://images.unsplash.com/photo-1527335988388-b40ee248d80c',
     services: [
       'Construction Material Supply',
       'Bulk supply of certified construction materials',
@@ -102,7 +102,7 @@ export const companies: Company[] = [
     slug: 'vharmal-singh-construction',
     shortDescription: 'Civil works execution, earthworks, and integrated supply & build contracts.',
     coreScope: 'Civil Construction Execution & Public Infrastructure Delivery',
-    image: 'https://images.unsplash.com/photo-1544971587-c1555541c5d4',
+    image: 'https://images.unsplash.com/photo-1603465410243-af3e840367dd',
     services: [
       'Civil Works Execution',
       'Earthworks',

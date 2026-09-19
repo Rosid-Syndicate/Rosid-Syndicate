@@ -145,7 +145,7 @@ export default function TenderInquiry() {
       <PageHeader
         title="Tender & RFQ inquiry"
         subtitle="Procurement desk"
-        image="https://images.unsplash.com/photo-1574320297042-63bc58baf00c"
+        image="https://images.unsplash.com/photo-1413882353314-73389f63b6fd"
         compact
       />
 
