@@ -1,446 +1,286 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { 
-  ArrowLeftIcon, 
-  PhotoIcon, 
-  EyeIcon, 
-  DocumentTextIcon, 
-  CheckIcon 
-} from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, EyeIcon, DocumentTextIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
-import { BlogPost, BlogCategory, INITIAL_BLOG_POSTS, INITIAL_CATEGORIES } from '../../data/blog'
+import { renderMarkdown } from '../../lib/markdown'
+import { unsplash } from '../../lib/images'
+import type { BlogCategory, BlogPost } from '../../data/blog'
+import { INITIAL_CATEGORIES } from '../../data/blog'
 
 const PRESET_IMAGES = [
-  { label: 'Corporate & Architecture', url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=100&w=3840&auto=format&fit=crop' },
-  { label: 'Infrastructure & Construction', url: 'https://images.unsplash.com/photo-1541888056262-563b7852f826?q=100&w=3840&auto=format&fit=crop' },
-  { label: 'Finance & Banking', url: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a?q=100&w=3840&auto=format&fit=crop' },
-  { label: 'Energy & Hydropower', url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=100&w=3840&auto=format&fit=crop' }
+  { label: 'Corporate & architecture', url: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab' },
+  { label: 'Infrastructure & construction', url: 'https://images.unsplash.com/photo-1541888056262-563b7852f826' },
+  { label: 'Finance & banking', url: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a' },
+  { label: 'Energy & hydropower', url: 'https://images.unsplash.com/photo-1497366216548-37526070297c' },
 ]
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const slugify = (s: string) => s.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/[\s_]+/g, '-').replace(/-+/g, '-').slice(0, 120)
+
+function estimateReadingTime(content: string) {
+  const words = content.trim().split(/\s+/).filter(Boolean).length
+  return `${Math.max(1, Math.round(words / 200))} min read`
+}
+
+/**
+ * Create / edit a blog post.
+ *
+ * Fixes vs. the previous editor: a failed save is reported as a failure (it used
+ * to toast "created (local session)" and navigate away, losing the article);
+ * editing no longer resets published_at; the post is looked up by id OR slug
+ * with a proper query instead of string-building a PostgREST filter from the URL.
+ */
 export default function AdminBlogEditor() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const isEditing = Boolean(id)
 
   const [categories, setCategories] = useState<BlogCategory[]>(INITIAL_CATEGORIES)
-  const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write')
+  const [tab, setTab] = useState<'write' | 'preview'>('write')
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(isEditing)
+  const [postId, setPostId] = useState<string | null>(null)
+  const [originalPublishedAt, setOriginalPublishedAt] = useState<string | null>(null)
 
-  // Form Fields
   const [title, setTitle] = useState('')
   const [slug, setSlug] = useState('')
+  const [slugTouched, setSlugTouched] = useState(false)
   const [excerpt, setExcerpt] = useState('')
   const [content, setContent] = useState('')
   const [featuredImage, setFeaturedImage] = useState(PRESET_IMAGES[0].url)
   const [categorySlug, setCategorySlug] = useState('company-news')
-  const [author, setAuthor] = useState('Roshan Pandey')
-  const [authorRole, setAuthorRole] = useState('Executive Leadership')
-  const [readingTime, setReadingTime] = useState('5 min read')
-  const [isPublished, setIsPublished] = useState(true)
-  const [tagsInput, setTagsInput] = useState('Corporate, Infrastructure, Nepal')
-
-  // Auto-generate slug from title
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value
-    setTitle(val)
-    if (!isEditing) {
-      const generatedSlug = val
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/--+/g, '-')
-        .trim()
-      setSlug(generatedSlug)
-    }
-  }
+  const [author, setAuthor] = useState('Rosid Editorial Team')
+  const [authorRole, setAuthorRole] = useState('Executive Advisory')
+  const [readingTime, setReadingTime] = useState('')
+  const [isPublished, setIsPublished] = useState(false)
+  const [tagsInput, setTagsInput] = useState('')
 
   useEffect(() => {
-    // Load categories
-    async function loadCategories() {
-      try {
-        const { data } = await supabase.from('blog_categories').select('*').order('name')
-        if (data && data.length > 0) setCategories(data)
-      } catch (err) {
-        console.warn('Using default categories', err)
+    supabase
+      .from('blog_categories')
+      .select('id, name, slug, description')
+      .order('name')
+      .then(({ data }) => {
+        if (data && data.length) setCategories(data as BlogCategory[])
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!isEditing || !id) return
+    let cancelled = false
+    const query = supabase.from('blog_posts').select('*')
+    const lookup = UUID_RE.test(id) ? query.eq('id', id) : query.eq('slug', id)
+    lookup.maybeSingle().then(({ data, error }) => {
+      if (cancelled) return
+      if (error || !data) {
+        toast.error('Post not found')
+        navigate('/admin/blog', { replace: true })
+        return
       }
+      const p = data as BlogPost
+      setPostId(p.id)
+      setTitle(p.title)
+      setSlug(p.slug)
+      setSlugTouched(true)
+      setExcerpt(p.excerpt)
+      setContent(p.content)
+      setFeaturedImage(p.featured_image)
+      setCategorySlug(p.category_slug)
+      setAuthor(p.author)
+      setAuthorRole(p.author_role || '')
+      setReadingTime(p.reading_time || '')
+      setIsPublished(p.is_published)
+      setTagsInput((p.tags ?? []).join(', '))
+      setOriginalPublishedAt(p.published_at)
+      setLoading(false)
+    })
+    return () => {
+      cancelled = true
     }
-    loadCategories()
+  }, [id, isEditing, navigate])
 
-    // If editing, load post
-    if (isEditing && id) {
-      async function loadPost() {
-        try {
-          // Check Supabase
-          const { data } = await supabase
-            .from('blog_posts')
-            .select('*')
-            .or(`id.eq.${id},slug.eq.${id}`)
-            .single()
+  const onTitleChange = (v: string) => {
+    setTitle(v)
+    if (!slugTouched) setSlug(slugify(v))
+  }
 
-          let postToEdit: BlogPost | null = data
-
-          // Check fallback
-          if (!postToEdit) {
-            postToEdit = INITIAL_BLOG_POSTS.find(p => p.id === id || p.slug === id) || null
-          }
-
-          if (postToEdit) {
-            setTitle(postToEdit.title)
-            setSlug(postToEdit.slug)
-            setExcerpt(postToEdit.excerpt)
-            setContent(postToEdit.content)
-            setFeaturedImage(postToEdit.featured_image)
-            setCategorySlug(postToEdit.category_slug)
-            setAuthor(postToEdit.author)
-            setAuthorRole(postToEdit.author_role || '')
-            setReadingTime(postToEdit.reading_time || '5 min read')
-            setIsPublished(postToEdit.is_published)
-            setTagsInput(postToEdit.tags ? postToEdit.tags.join(', ') : '')
-          }
-        } catch (err) {
-          console.warn('Error loading post to edit:', err)
-        }
-      }
-      loadPost()
-    }
-  }, [id, isEditing])
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-
-    if (!title.trim() || !content.trim()) {
-      toast.error('Title and content are required.')
+    if (!title.trim() || !content.trim() || !excerpt.trim()) {
+      toast.error('Title, excerpt and content are required.')
+      return
+    }
+    const finalSlug = slugify(slug || title)
+    if (!finalSlug) {
+      toast.error('Please provide a URL slug.')
+      return
+    }
+    let imageUrl: string
+    try {
+      const u = new URL(featuredImage)
+      if (!/^https?:$/.test(u.protocol)) throw new Error('bad protocol')
+      imageUrl = u.toString()
+    } catch {
+      toast.error('Featured image must be an http(s) URL.')
       return
     }
 
     setSaving(true)
-
-    const selectedCategoryObj = categories.find(c => c.slug === categorySlug)
-    const categoryName = selectedCategoryObj ? selectedCategoryObj.name : 'Company News'
-    const tagsArray = tagsInput.split(',').map(t => t.trim()).filter(Boolean)
-
-    const postPayload = {
-      title,
-      slug: slug || title.toLowerCase().replace(/\s+/g, '-'),
-      excerpt,
+    const category = categories.find((c) => c.slug === categorySlug)
+    const payload = {
+      title: title.trim(),
+      slug: finalSlug,
+      excerpt: excerpt.trim(),
       content,
-      featured_image: featuredImage,
-      category: categoryName,
+      featured_image: imageUrl,
+      category: category?.name ?? 'Company News',
       category_slug: categorySlug,
-      author,
-      author_role: authorRole,
+      author: author.trim() || 'Rosid Editorial Team',
+      author_role: authorRole.trim() || null,
       is_published: isPublished,
-      reading_time: readingTime,
-      tags: tagsArray,
-      published_at: new Date().toISOString()
+      reading_time: readingTime.trim() || estimateReadingTime(content),
+      tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
+      // Keep the original publication date when editing.
+      published_at: originalPublishedAt ?? new Date().toISOString(),
     }
 
-    try {
-      if (isEditing) {
-        const { error } = await supabase
-          .from('blog_posts')
-          .update(postPayload)
-          .or(`id.eq.${id},slug.eq.${id}`)
+    const result = isEditing && postId
+      ? await supabase.from('blog_posts').update(payload).eq('id', postId)
+      : await supabase.from('blog_posts').insert([payload])
 
-        if (error) throw error
-        toast.success('Article updated successfully!')
-      } else {
-        const { error } = await supabase
-          .from('blog_posts')
-          .insert([postPayload])
-
-        if (error) throw error
-        toast.success('Article created successfully!')
-      }
-      navigate('/admin/blog')
-    } catch (err: any) {
-      console.warn('Supabase save error, simulating local success:', err)
-      toast.success(isEditing ? 'Article updated (local session)' : 'Article created (local session)')
-      navigate('/admin/blog')
-    } finally {
-      setSaving(false)
+    setSaving(false)
+    if (result.error) {
+      const msg = /duplicate key/i.test(result.error.message) ? 'That URL slug is already in use.' : result.error.message
+      toast.error(`Save failed: ${msg}`)
+      return
     }
+    toast.success(isEditing ? 'Article updated' : 'Article created')
+    navigate('/admin/blog')
+  }
+
+  if (loading) {
+    return <p className="p-10 text-sm text-muted" role="status">Loading post…</p>
   }
 
   return (
-    <div className="p-6 md:p-10 max-w-5xl mx-auto">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4 mb-8 pb-4 border-b border-slate-200">
+    <div className="p-5 sm:p-8 lg:p-10 max-w-5xl mx-auto">
+      <header className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-line">
         <div className="flex items-center gap-3">
-          <Link
-            to="/admin/blog"
-            className="p-2 bg-white border border-slate-200 text-slate-600 hover:text-[#011E52] rounded-sm transition-colors"
-          >
-            <ArrowLeftIcon className="w-4 h-4" />
+          <Link to="/admin/blog" className="btn-ghost btn-sm" aria-label="Back to blog posts">
+            <ArrowLeftIcon className="w-4 h-4" aria-hidden="true" />
           </Link>
           <div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-[#011E52] tracking-tight uppercase">
-              {isEditing ? 'Edit Blog Article' : 'Create New Blog Article'}
-            </h1>
-            <p className="text-xs text-slate-500">
-              {isEditing ? `Editing: ${title || slug}` : 'Draft and publish corporate editorial content.'}
-            </p>
+            <h1 className="text-h3 text-ink">{isEditing ? 'Edit article' : 'New article'}</h1>
+            <p className="text-xs text-muted">{isEditing ? `Editing: ${title || slug}` : 'Draft and publish editorial content.'}</p>
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab(activeTab === 'write' ? 'preview' : 'write')}
-            className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-xs font-bold uppercase tracking-wider text-slate-700 rounded-sm transition-colors flex items-center gap-1.5"
-          >
-            {activeTab === 'write' ? (
-              <><EyeIcon className="w-4 h-4" /> Live Preview</>
-            ) : (
-              <><DocumentTextIcon className="w-4 h-4" /> Back to Editor</>
-            )}
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => setTab(tab === 'write' ? 'preview' : 'write')} className="btn-secondary btn-sm" aria-pressed={tab === 'preview'}>
+            {tab === 'write' ? (<><EyeIcon className="w-4 h-4" aria-hidden="true" /> Preview</>) : (<><DocumentTextIcon className="w-4 h-4" aria-hidden="true" /> Editor</>)}
           </button>
-          <button
-            type="submit"
-            form="blog-editor-form"
-            disabled={saving}
-            className="px-6 py-2 bg-[#FD7B00] hover:bg-[#e66a00] text-white text-xs font-bold uppercase tracking-widest rounded-sm shadow-md transition-colors flex items-center gap-1.5 disabled:opacity-50"
-          >
-            <CheckIcon className="w-4 h-4" /> {saving ? 'Saving...' : 'Publish / Save'}
+          <button type="submit" form="blog-editor-form" disabled={saving} className="btn-primary btn-sm" aria-busy={saving}>
+            <CheckIcon className="w-4 h-4" aria-hidden="true" /> {saving ? 'Saving…' : isPublished ? 'Save & publish' : 'Save draft'}
           </button>
         </div>
-      </div>
+      </header>
 
-      {activeTab === 'preview' ? (
-        /* Live Preview Mode */
-        <div className="bg-white p-8 sm:p-12 rounded-sm border border-slate-200 shadow-sm">
+      {tab === 'preview' ? (
+        <article className="card p-8 sm:p-12">
           <div className="max-w-3xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#FD7B00] block mb-2">
-              {categories.find(c => c.slug === categorySlug)?.name || 'Category'}
-            </span>
-            <h1 className="text-3xl font-extrabold text-[#011E52] leading-tight mb-4">
-              {title || 'Article Title'}
-            </h1>
-            <p className="text-slate-600 italic bg-slate-50 p-4 border-l-4 border-[#FD7B00] mb-8">
-              {excerpt || 'Article summary excerpt...'}
-            </p>
-            {featuredImage && (
-              <img 
-                src={featuredImage} 
-                alt={title} 
-                className="w-full h-80 object-cover rounded-sm mb-8 border border-slate-200"
-              />
-            )}
-            <div className="prose prose-slate max-w-none whitespace-pre-wrap">
-              {content || 'No content typed yet...'}
-            </div>
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-accent-text">{categories.find((c) => c.slug === categorySlug)?.name || 'Category'}</p>
+            <h2 className="mt-3 text-h1">{title || 'Article title'}</h2>
+            <p className="mt-5 text-lead text-ink bg-canvas p-5 border-l-4 border-accent">{excerpt || 'Article excerpt…'}</p>
+            {featuredImage && <img src={unsplash(featuredImage, { w: 1200, q: 70 })} alt="" className="mt-8 w-full aspect-[16/9] object-cover rounded-sm border border-line" />}
+            <div className="prose-body mt-8">{content ? renderMarkdown(content) : <p className="text-muted">No content yet.</p>}</div>
           </div>
-        </div>
+        </article>
       ) : (
-        /* Edit Form Mode */
-        <form id="blog-editor-form" onSubmit={handleSave} className="space-y-8">
-          
-          {/* Main Details Card */}
-          <div className="bg-white p-6 sm:p-8 rounded-sm border border-slate-200 shadow-sm space-y-6">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-[#011E52] border-b border-slate-100 pb-3">
-              Article Information
-            </h2>
+        <form id="blog-editor-form" onSubmit={handleSave} className="space-y-6" noValidate>
+          <fieldset className="card p-6 sm:p-8 space-y-5">
+            <legend className="text-xs font-bold uppercase tracking-[0.1em] text-muted px-1">Article information</legend>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                Article Title *
-              </label>
-              <input
-                type="text"
-                required
-                placeholder="e.g., A Guide to Bank Guarantees for Foreign Contractors in Nepal"
-                value={title}
-                onChange={handleTitleChange}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 text-sm font-medium rounded-sm focus:outline-none focus:border-[#FD7B00]"
-              />
+              <label htmlFor="post-title" className="field-label">Title <span aria-hidden="true" className="text-accent-text">*</span></label>
+              <input id="post-title" type="text" required maxLength={500} value={title} onChange={(e) => onTitleChange(e.target.value)} className="field" placeholder="e.g. A guide to bank guarantees for foreign contractors in Nepal" />
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  URL Slug (Unique) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="guide-to-bank-guarantees"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-xs font-mono rounded-sm focus:outline-none focus:border-[#FD7B00]"
-                />
+                <label htmlFor="post-slug" className="field-label">URL slug <span aria-hidden="true" className="text-accent-text">*</span></label>
+                <input id="post-slug" type="text" required maxLength={120} value={slug} onChange={(e) => { setSlugTouched(true); setSlug(e.target.value) }} onBlur={() => setSlug(slugify(slug))} className="field font-mono text-xs" placeholder="guide-to-bank-guarantees" aria-describedby="slug-help" />
+                <p id="slug-help" className="mt-1 text-xs text-muted">Public URL: /blog/{slugify(slug || title) || '…'}</p>
               </div>
-
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Category *
-                </label>
-                <select
-                  value={categorySlug}
-                  onChange={(e) => setCategorySlug(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-xs font-bold rounded-sm focus:outline-none focus:border-[#FD7B00]"
-                >
+                <label htmlFor="post-category" className="field-label">Category <span aria-hidden="true" className="text-accent-text">*</span></label>
+                <select id="post-category" value={categorySlug} onChange={(e) => setCategorySlug(e.target.value)} className="field">
                   {categories.map((cat) => (
-                    <option key={cat.slug} value={cat.slug}>
-                      {cat.name}
-                    </option>
+                    <option key={cat.slug} value={cat.slug}>{cat.name}</option>
                   ))}
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                Short Excerpt (SEO Summary) *
+              <label htmlFor="post-excerpt" className="field-label">Excerpt (meta description) <span aria-hidden="true" className="text-accent-text">*</span></label>
+              <textarea id="post-excerpt" rows={2} required maxLength={300} value={excerpt} onChange={(e) => setExcerpt(e.target.value)} className="field" placeholder="One or two sentences shown on cards and in search results." aria-describedby="excerpt-help" />
+              <p id="excerpt-help" className="mt-1 text-xs text-muted">{excerpt.length}/300 · aim for 120–160 characters.</p>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-5">
+              <div>
+                <label htmlFor="post-author" className="field-label">Author</label>
+                <input id="post-author" type="text" maxLength={255} value={author} onChange={(e) => setAuthor(e.target.value)} className="field" />
+              </div>
+              <div>
+                <label htmlFor="post-author-role" className="field-label">Author role</label>
+                <input id="post-author-role" type="text" maxLength={255} value={authorRole} onChange={(e) => setAuthorRole(e.target.value)} className="field" placeholder="e.g. Executive Advisory Desk" />
+              </div>
+              <div>
+                <label htmlFor="post-reading" className="field-label">Reading time</label>
+                <input id="post-reading" type="text" maxLength={50} value={readingTime} onChange={(e) => setReadingTime(e.target.value)} className="field" placeholder={estimateReadingTime(content)} aria-describedby="reading-help" />
+                <p id="reading-help" className="mt-1 text-xs text-muted">Leave blank to estimate from the content.</p>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-5 items-end">
+              <div>
+                <label htmlFor="post-tags" className="field-label">Tags (comma separated)</label>
+                <input id="post-tags" type="text" maxLength={300} value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} className="field" placeholder="Foreign contractors, Procurement, Guarantees" />
+              </div>
+              <label className="inline-flex items-center gap-3 min-h-[44px] cursor-pointer">
+                <input type="checkbox" checked={isPublished} onChange={(e) => setIsPublished(e.target.checked)} className="w-4 h-4 rounded-sm border-line text-ink focus:ring-ink" />
+                <span className="text-sm font-semibold text-ink">Published on the live website</span>
               </label>
-              <textarea
-                rows={2}
-                required
-                placeholder="A compelling 1-2 sentence summary displayed on cards and search engine results..."
-                value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-xs rounded-sm focus:outline-none focus:border-[#FD7B00]"
-              />
             </div>
+          </fieldset>
 
-            {/* Author & Reading Time */}
-            <div className="grid sm:grid-cols-3 gap-6 pt-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Author Name
-                </label>
-                <input
-                  type="text"
-                  value={author}
-                  onChange={(e) => setAuthor(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 text-xs rounded-sm focus:outline-none focus:border-[#FD7B00]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Author Title / Role
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., Executive Advisory Desk"
-                  value={authorRole}
-                  onChange={(e) => setAuthorRole(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 text-xs rounded-sm focus:outline-none focus:border-[#FD7B00]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Estimated Reading Time
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., 5 min read"
-                  value={readingTime}
-                  onChange={(e) => setReadingTime(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 text-xs rounded-sm focus:outline-none focus:border-[#FD7B00]"
-                />
-              </div>
-            </div>
-
-            {/* Tags & Status */}
-            <div className="grid sm:grid-cols-2 gap-6 pt-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                  Tags (Comma separated)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Foreign Contractors, Procurement, Guarantees"
-                  value={tagsInput}
-                  onChange={(e) => setTagsInput(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 text-xs rounded-sm focus:outline-none focus:border-[#FD7B00]"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-6">
-                <input
-                  type="checkbox"
-                  id="is_published"
-                  checked={isPublished}
-                  onChange={(e) => setIsPublished(e.target.checked)}
-                  className="w-4 h-4 text-[#FD7B00] border-slate-300 rounded focus:ring-[#FD7B00]"
-                />
-                <label htmlFor="is_published" className="text-xs font-bold uppercase tracking-wider text-slate-700 cursor-pointer">
-                  Publish to Live Website
-                </label>
-              </div>
-            </div>
-          </div>
-
-          {/* Featured Image Selector */}
-          <div className="bg-white p-6 sm:p-8 rounded-sm border border-slate-200 shadow-sm space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-[#011E52] border-b border-slate-100 pb-3 flex items-center gap-2">
-              <PhotoIcon className="w-4 h-4 text-[#FD7B00]" /> Featured Header Image
-            </h2>
-
+          <fieldset className="card p-6 sm:p-8 space-y-4">
+            <legend className="text-xs font-bold uppercase tracking-[0.1em] text-muted px-1">Featured image</legend>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
-                Image URL (Direct link)
-              </label>
-              <input
-                type="url"
-                required
-                value={featuredImage}
-                onChange={(e) => setFeaturedImage(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 text-xs rounded-sm focus:outline-none focus:border-[#FD7B00]"
-              />
+              <label htmlFor="post-image" className="field-label">Image URL (https)</label>
+              <input id="post-image" type="url" required value={featuredImage} onChange={(e) => setFeaturedImage(e.target.value)} className="field font-mono text-xs" />
             </div>
-
-            {/* Quick Presets */}
-            <div>
-              <span className="text-[11px] font-bold uppercase text-slate-500 block mb-2">
-                Quick High-Resolution Presets:
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {PRESET_IMAGES.map((preset) => (
-                  <button
-                    key={preset.url}
-                    type="button"
-                    onClick={() => setFeaturedImage(preset.url)}
-                    className={`p-2 text-left rounded-sm border text-[11px] font-medium transition-all ${
-                      featuredImage === preset.url
-                        ? 'border-[#FD7B00] bg-orange-50/50 text-[#011E52] font-bold'
-                        : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                    }`}
-                  >
-                    <img src={preset.url} alt={preset.label} className="w-full h-16 object-cover rounded-sm mb-1.5" />
-                    <span className="truncate block">{preset.label}</span>
-                  </button>
-                ))}
-              </div>
+            <div role="group" aria-label="Preset images" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {PRESET_IMAGES.map((preset) => (
+                <button key={preset.url} type="button" onClick={() => setFeaturedImage(preset.url)} aria-pressed={featuredImage === preset.url} className={`p-2 text-left rounded-sm border text-xs transition-colors ${featuredImage === preset.url ? 'border-ink bg-canvas font-bold text-ink' : 'border-line hover:border-ink/40 text-muted'}`}>
+                  <img src={unsplash(preset.url, { w: 320, q: 55 })} alt="" loading="lazy" className="w-full h-16 object-cover rounded-sm mb-1.5" />
+                  <span className="block truncate">{preset.label}</span>
+                </button>
+              ))}
             </div>
-          </div>
+          </fieldset>
 
-          {/* Body Content Editor */}
-          <div className="bg-white p-6 sm:p-8 rounded-sm border border-slate-200 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-[#011E52] flex items-center gap-2">
-                <DocumentTextIcon className="w-4 h-4 text-[#FD7B00]" /> Full Article Body (Markdown Supported)
-              </h2>
-              <span className="text-[11px] text-slate-400">Supports ## H2, ### H3, - Lists, [Links](url)</span>
+          <fieldset className="card p-6 sm:p-8 space-y-3">
+            <legend className="text-xs font-bold uppercase tracking-[0.1em] text-muted px-1">Article body</legend>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label htmlFor="post-content" className="field-label mb-0">Markdown <span aria-hidden="true" className="text-accent-text">*</span></label>
+              <p className="text-xs text-muted">Supports ## and ### headings, - lists, 1. lists, **bold**, *italic*, [links](https://…), --- and ``` code. Raw HTML is shown as text.</p>
             </div>
-
-            <textarea
-              rows={16}
-              required
-              placeholder="Write your in-depth analysis, case study, or corporate publication here..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 font-mono text-xs sm:text-sm rounded-sm focus:outline-none focus:border-[#FD7B00] leading-relaxed"
-            />
-          </div>
-
+            <textarea id="post-content" rows={18} required value={content} onChange={(e) => setContent(e.target.value)} className="field font-mono text-sm leading-relaxed" placeholder="Write the article…" />
+          </fieldset>
         </form>
       )}
-
     </div>
   )
 }

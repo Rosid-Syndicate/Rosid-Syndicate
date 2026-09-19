@@ -1,30 +1,33 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
+import Seo from '../components/Seo'
+import { CONTACT, SITE_HOST, SITE_URL } from '../config/site'
 
 export default function PrivacyPolicy() {
-  useEffect(() => {
-    window.scrollTo(0, 0)
-    document.title = 'Privacy Policy | Rosid Syndicates Group'
-  }, [])
-
   return (
-    <div className="bg-transparent min-h-screen">
+    <div className="bg-canvas min-h-screen">
+      <Seo
+        title="Privacy Policy"
+        description="Privacy policy of Rosid Syndicates Group: what information we collect through the contact and tender forms, how it is used and protected, your rights, and how to contact us. Jurisdiction: Nepal."
+        path="/privacy-policy"
+        breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Privacy Policy', path: '/privacy-policy' }]}
+      />
       {/* Header */}
       <div className="print:hidden">
         <PageHeader 
           title="Privacy Policy" 
           subtitle="Legal & Governance" 
-          image="https://images.unsplash.com/photo-1497366216548-37526070297c?q=100&w=3840&auto=format&fit=crop"
+          image="https://images.unsplash.com/photo-1497366216548-37526070297c"
+          compact
         />
       </div>
 
-      <div className="hidden print:block print:bg-transparent print:text-ink print:py-12 border-b border-slate-200">
+      <div className="hidden print:block print:bg-transparent print:text-ink print:py-12 border-b border-line">
         <div className="container">
           <div className="max-w-3xl">
-            <p className="eyebrow text-slate-500 uppercase tracking-widest mb-4">Official Document</p>
+            <p className="eyebrow text-muted uppercase tracking-widest mb-4">Official Document</p>
             <h1 className="text-4xl font-bold tracking-tight leading-tight">Privacy Policy</h1>
-            <p className="mt-4 text-xl text-slate-500 font-medium">Rosid Syndicates Group</p>
+            <p className="mt-4 text-xl text-muted font-medium">Rosid Syndicates Group</p>
           </div>
         </div>
       </div>
@@ -33,21 +36,21 @@ export default function PrivacyPolicy() {
       <div className="container max-w-4xl py-16 print:py-8">
         
         {/* Commitment Statement */}
-        <div className="mb-12 p-8 bg-white border-l-4 border-[#FD7B00] shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-[#011E52]">Commitment to Data Privacy</p>
-          <p className="text-slate-600 mt-2 leading-relaxed text-sm md:text-base">
+        <div className="mb-12 p-8 bg-white border-l-4 border-accent shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-widest text-ink">Commitment to Data Privacy</p>
+          <p className="text-muted mt-2 leading-relaxed text-sm md:text-base">
             Welcome to <strong>Rosid Syndicates Group</strong> (rosid.com.np). We respect your privacy and are committed to protecting your personal and corporate data.
           </p>
-          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-6 text-xs text-slate-500 font-medium">
+          <div className="mt-4 pt-4 border-t border-line flex flex-wrap gap-6 text-xs text-muted font-medium">
             <span><strong>Last Updated:</strong> August 2026</span>
             <span><strong>Jurisdiction:</strong> Nepal</span>
-            <span><strong>Website:</strong> rosid.com.np</span>
+            <span><strong>Website:</strong> {SITE_HOST}</span>
           </div>
         </div>
 
-        <article className="prose prose-slate prose-lg max-w-none prose-headings:font-bold prose-headings:text-[#011E52] prose-a:text-[#FD7B00]">
+        <article className="prose-body">
           
-          <h2 className="text-2xl md:text-3xl border-b border-slate-200 pb-3 mt-12 mb-6">1. Introduction</h2>
+          <h2>1. Introduction</h2>
           <p>
             Welcome to <strong>Rosid Syndicates Group</strong> (rosid.com.np). We respect your privacy and are committed to protecting your personal data. This Privacy Policy outlines how we collect, handle, secure, and process information submitted across our corporate portal and throughout our operating subsidiaries in Nepal:
           </p>
@@ -60,14 +63,14 @@ export default function PrivacyPolicy() {
               'B & C Exim Company Pvt. Ltd.',
               'Deiyougo Enterprises Pvt. Ltd.'
             ].map((sub) => (
-              <div key={sub} className="p-4 bg-white border border-slate-200 shadow-sm flex items-center gap-3">
+              <div key={sub} className="p-4 bg-white border border-line shadow-sm flex items-center gap-3">
                 <span className="w-2 h-2 rounded-full bg-[#FD7B00]"></span>
-                <span className="text-sm font-semibold text-[#011E52]">{sub}</span>
+                <span className="text-sm font-semibold text-ink">{sub}</span>
               </div>
             ))}
           </div>
 
-          <h2 className="text-2xl md:text-3xl border-b border-slate-200 pb-3 mt-14 mb-6">2. Information We Collect</h2>
+          <h2>2. Information We Collect</h2>
           <p>We collect only the necessary information required to facilitate our infrastructure, procurement, financial advisory, and trading services:</p>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Contact Identification:</strong> Full Name, Email Address, and Phone Number (optional).</li>
@@ -77,7 +80,7 @@ export default function PrivacyPolicy() {
             <li><strong>Technical Data:</strong> IP address, browser type, operating system, and device information.</li>
           </ul>
 
-          <h2 className="text-2xl md:text-3xl border-b border-slate-200 pb-3 mt-14 mb-6">3. How We Use Your Information</h2>
+          <h2>3. How We Use Your Information</h2>
           <p>We use your data strictly to:</p>
           <ul className="list-disc pl-6 space-y-2">
             <li>Respond to your messages, inquiries, and corporate requests.</li>
@@ -86,7 +89,7 @@ export default function PrivacyPolicy() {
             <li>Improve the performance, security, and quality of our website and services.</li>
           </ul>
 
-          <h2 className="text-2xl md:text-3xl border-b border-slate-200 pb-3 mt-14 mb-6">4. Data Protection & Security</h2>
+          <h2>4. Data Protection & Security</h2>
           <p>We maintain comprehensive security measures to safeguard your information against unauthorized access, loss, or alteration:</p>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>SSL Encryption:</strong> High-grade 256-bit encryption for all data transmitted across our web interfaces and API endpoints.</li>
@@ -94,7 +97,7 @@ export default function PrivacyPolicy() {
             <li><strong>Access Controls:</strong> Administrative access to inbound submissions is restricted exclusively to authorized corporate personnel.</li>
           </ul>
 
-          <h2 className="text-2xl md:text-3xl border-b border-slate-200 pb-3 mt-14 mb-6">5. Your Rights</h2>
+          <h2>5. Your Rights</h2>
           <p>Under the applicable privacy frameworks in Nepal, you have the right to:</p>
           <ul className="list-disc pl-6 space-y-2">
             <li><strong>Access:</strong> Request a copy of the personal information we hold about you.</li>
@@ -103,24 +106,24 @@ export default function PrivacyPolicy() {
             <li><strong>Withdraw Consent:</strong> Revoke previously given consent for communication at any time.</li>
           </ul>
 
-          <h2 className="text-2xl md:text-3xl border-b border-slate-200 pb-3 mt-14 mb-6">6. Contact Us</h2>
-          <div className="bg-white p-6 rounded-sm border border-slate-200 shadow-sm not-prose text-ink space-y-2">
-            <p className="text-lg font-bold text-[#011E52]">Rosid Syndicates Group</p>
+          <h2>6. Contact Us</h2>
+          <div className="bg-white p-6 rounded-sm border border-line shadow-sm not-prose text-ink space-y-2">
+            <p className="text-lg font-bold text-ink">Rosid Syndicates Group</p>
             <p><strong>Address:</strong> New Baneshwor, Kathmandu, Nepal</p>
-            <p><strong>Email:</strong> <a href="mailto:rosid2025@outlook.com" className="text-[#FD7B00] font-bold">rosid2025@outlook.com</a></p>
-            <p><strong>Phone:</strong> <a href="tel:+9779705398939" className="text-[#011E52] font-semibold">+977-9705398939</a></p>
-            <p><strong>Website:</strong> <a href="https://rosid.com.np" target="_blank" rel="noopener" className="text-[#011E52] font-bold">rosid.com.np</a></p>
+            <p><strong>Email:</strong> <a href={`mailto:${CONTACT.email}`} className="text-accent-text font-bold">{CONTACT.email}</a></p>
+            <p><strong>Phone:</strong> <a href="tel:+9779705398939" className="text-ink font-semibold">+977-9705398939</a></p>
+            <p><strong>Website:</strong> <a href={SITE_URL} className="text-ink font-bold">{SITE_HOST}</a></p>
           </div>
 
-          <h2 className="text-2xl md:text-3xl border-b border-slate-200 pb-3 mt-14 mb-6">7. Governing Law</h2>
+          <h2>7. Governing Law</h2>
           <p>
             This Privacy Policy is governed by and construed in accordance with the laws of <strong>Nepal</strong>.
           </p>
 
-          <div className="mt-12 pt-6 border-t border-slate-200 flex flex-wrap gap-4 text-sm not-prose">
-            <Link to="/terms-conditions" className="text-[#FD7B00] font-bold hover:underline">View Terms & Conditions &rarr;</Link>
+          <div className="mt-12 pt-6 border-t border-line flex flex-wrap gap-4 text-sm not-prose">
+            <Link to="/terms-conditions" className="text-accent-text font-bold hover:underline">View Terms & Conditions &rarr;</Link>
             <span className="text-slate-300">|</span>
-            <Link to="/cookie-policy" className="text-[#FD7B00] font-bold hover:underline">View Cookie Policy &rarr;</Link>
+            <Link to="/cookie-policy" className="text-accent-text font-bold hover:underline">View Cookie Policy &rarr;</Link>
           </div>
 
         </article>

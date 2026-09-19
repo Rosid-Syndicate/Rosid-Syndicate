@@ -1,94 +1,95 @@
-import { useParams, Link } from 'react-router-dom'
-import { useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
+import { Link, useParams } from 'react-router-dom'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { CheckIcon } from '@heroicons/react/20/solid'
 import { companies } from '../data/companies'
+import { services } from '../data/services'
 import PageHeader from '../components/PageHeader'
+import Seo from '../components/Seo'
+import NotFound from './NotFound'
+import { SITE_URL } from '../config/site'
 
 export default function CompanyDetail() {
   const { slug } = useParams()
-  const company = companies.find(c => c.slug === slug)
-
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [slug])
+  const company = companies.find((c) => c.slug === slug)
 
   if (!company) {
-    return (
-      <div className="pt-32 pb-24 min-h-screen bg-[#F4F4F2] text-center flex flex-col items-center justify-center">
-        <h1 className="text-3xl font-bold text-ink mb-4">Company Not Found</h1>
-        <Link to="/companies" className="inline-flex items-center gap-2 text-sm font-bold text-fire hover:text-fire-600 transition-colors">
-          <ArrowLeftIcon className="w-4 h-4" /> View All Companies
-        </Link>
-      </div>
-    )
+    return <NotFound title="Company not found" message="That company page does not exist. Browse the five operating companies instead." backTo="/companies" backLabel="All companies" />
+  }
+
+  const related = services.filter((s) => s.companies.includes(company.slug))
+  const headerImage = company.image.startsWith('/') ? 'https://images.unsplash.com/photo-1497366216548-37526070297c' : company.image
+
+  const orgJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: company.name,
+    url: `${SITE_URL}/companies/${company.slug}`,
+    description: company.shortDescription,
+    parentOrganization: { '@id': `${SITE_URL}/#organization` },
+    address: { '@type': 'PostalAddress', addressCountry: 'NP' },
   }
 
   return (
-    <div className="bg-transparent min-h-screen">
-      <PageHeader 
+    <div className="bg-canvas min-h-screen">
+      <Seo
         title={company.name}
-        subtitle="Rosid Syndicates Group Subsidiary"
-        image={company.image || "https://images.unsplash.com/photo-1544971587-c1555541c5d4?q=100&w=3840&auto=format&fit=crop"}
-        backLink="/companies"
-        backLabel="Group Companies"
+        description={`${company.shortDescription} ${company.coreScope}. A Rosid Syndicates Group company, Nepal.`}
+        path={`/companies/${company.slug}`}
+        image={headerImage}
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Group Companies', path: '/companies' },
+          { name: company.name, path: `/companies/${company.slug}` },
+        ]}
+        jsonLd={orgJsonLd}
       />
-      <div className="container max-w-4xl py-20">
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.1 }} 
-          className="mt-12 p-8 bg-[#F4F4F2] border border-slate-200"
-        >
-          <h2 className="text-sm font-bold text-ink/40 uppercase tracking-[0.15em] mb-3">Core Scope</h2>
-          <p className="text-xl md:text-2xl text-ink font-medium leading-relaxed">
-            {company.coreScope}
-          </p>
-        </motion.div>
+      <PageHeader title={company.name} subtitle="Group company" lead={company.shortDescription} image={headerImage} backLink="/companies" backLabel="All companies" />
 
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.2 }} 
-          className="mt-16"
-        >
-          <h2 className="text-2xl font-bold text-ink mb-8">Capabilities & Focus Areas</h2>
-          <ul className="grid sm:grid-cols-2 gap-4">
-            {company.services.map((service, idx) => (
-              <li key={idx} className="flex items-start gap-4 p-6 bg-transparent border border-slate-200 shadow-sm">
-                <span className="grid place-items-center w-6 h-6 rounded-full bg-fire/10 text-fire text-[10px] font-bold shrink-0 mt-0.5">
-                  &#10003;
-                </span>
-                <span className="text-ink text-base leading-relaxed font-medium">
-                  {service}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </motion.div>
-        
+      <div className="container py-16 lg:py-24">
+        <div className="grid lg:grid-cols-12 gap-12">
+          <div className="lg:col-span-8">
+            <section className="card p-6 sm:p-8" aria-labelledby="scope-heading">
+              <h2 id="scope-heading" className="text-xs font-bold uppercase tracking-[0.1em] text-muted">Core scope</h2>
+              <p className="mt-3 text-xl sm:text-2xl text-ink font-medium leading-snug">{company.coreScope}</p>
+            </section>
 
-        
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.3 }} 
-          className="mt-20 py-16 border-t border-slate-200 text-center"
-        >
-          <p className="text-2xl font-bold text-ink">Ready to work with {company.name}?</p>
-          <p className="mt-4 text-slate-500 max-w-lg mx-auto">
-            Leverage our specialized capabilities for your next mega-project in Nepal.
-          </p>
-          <Link
-            to="/#contact"
-            className="inline-flex items-center gap-2 mt-8 px-8 py-4 bg-white text-ink font-bold text-sm uppercase tracking-widest hover:bg-fire transition-colors"
-          >
-            Discuss a Project
-            <ArrowRightIcon className="w-4 h-4" />
-          </Link>
-        </motion.div>
+            <section className="mt-12" aria-labelledby="capabilities-heading">
+              <h2 id="capabilities-heading" className="text-h2">Capabilities &amp; focus areas</h2>
+              <ul className="mt-6 grid sm:grid-cols-2 gap-3">
+                {company.services.map((service) => (
+                  <li key={service} className="flex items-start gap-3 p-4 bg-surface border border-line rounded-sm">
+                    <span className="mt-0.5 grid place-items-center w-5 h-5 rounded-full bg-accent-soft text-accent-text shrink-0" aria-hidden="true">
+                      <CheckIcon className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-ink leading-relaxed">{service}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
 
+          <aside className="lg:col-span-4 space-y-6">
+            {related.length > 0 && (
+              <div className="card p-6">
+                <h2 className="text-xs font-bold uppercase tracking-[0.1em] text-muted">Group capabilities delivered</h2>
+                <ul className="mt-4 space-y-2">
+                  {related.map((s) => (
+                    <li key={s.slug}>
+                      <Link to={`/service/${s.slug}`} className="link-arrow">{s.title} →</Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="bg-ink text-white p-6 rounded-sm">
+              <h2 className="text-h3 text-white">Work with {company.name.replace(/ Pvt\. Ltd\.$/, '')}</h2>
+              <p className="mt-2 text-sm text-slate-300">Share your requirement and the company team will respond by email.</p>
+              <Link to="/#contact" className="btn-accent mt-5 w-full">
+                Discuss a project <ArrowRightIcon className="w-4 h-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
   )

@@ -1,70 +1,92 @@
-import { useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import PageHeader from '../components/PageHeader'
+import Seo from '../components/Seo'
+import { sectors } from '../data/sectors'
+import { projects } from '../data/projects'
+import { unsplash, unsplashSrcSet } from '../lib/images'
 
-const projects = [
-  { name: 'National Hydroelectric Dam Phase II', location: 'Gandaki Province, Nepal', img: 'https://images.unsplash.com/photo-1541888056262-563b7852f826?q=100&w=3840&auto=format&fit=crop', colSpan: 'col-span-1 md:col-span-2', height: 'h-[500px]' },
-  { name: 'Kathmandu Metro Civil Works', location: 'Bagmati Province, Nepal', img: 'https://images.unsplash.com/photo-1504307651254-35680f356f12?q=100&w=3840&auto=format&fit=crop', colSpan: 'col-span-1', height: 'h-[500px]' },
-  { name: 'Koshi Bridge Expansion', location: 'Koshi Province, Nepal', img: 'https://images.unsplash.com/photo-1574320297042-63bc58baf00c?q=100&w=3840&auto=format&fit=crop', colSpan: 'col-span-1', height: 'h-[600px]' },
-  { name: 'Trans-Himalayan Transmission Grid', location: 'Karnali Province, Nepal', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=100&w=3840&auto=format&fit=crop', colSpan: 'col-span-1 md:col-span-2', height: 'h-[600px]' },
-]
-
+/**
+ * Sectors & projects overview.
+ *
+ * The previous page presented four named "verified projects" that did not exist
+ * in the project data (src/data/projects.ts is empty). This page describes the
+ * sectors the group works in and renders real case studies from the data file
+ * as soon as the business publishes them.
+ */
 export default function ProjectsPage() {
-  useEffect(() => {
-    window.scrollTo(0, 0)
-    document.title = 'Projects & Case Studies | Rosid Syndicates Group'
-  }, [])
-
   return (
-    <div className="bg-transparent min-h-screen flex flex-col">
-      <PageHeader 
-        title="Projects & case studies." 
-        subtitle="Portfolio" 
-        image="https://images.unsplash.com/photo-1504307651254-35680f356f12?q=100&w=3840&auto=format&fit=crop"
+    <div className="bg-canvas min-h-screen">
+      <Seo
+        title="Sectors & Projects"
+        description="Sectors served by Rosid Syndicates Group in Nepal — hydropower and energy, roads and civil works, transmission and grid, trade and industrial supply — and how the group's companies contribute to each."
+        path="/projects"
+        breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Sectors & Projects', path: '/projects' }]}
+      />
+      <PageHeader
+        title="Sectors & projects"
+        subtitle="Where we work"
+        lead="The infrastructure and trade sectors the group serves, and the role each operating company plays."
+        image="https://images.unsplash.com/photo-1504307651254-35680f356f12"
       />
 
-      {/* 2. CAPABILITIES VS VERIFIED PROJECTS */}
-      <section className="py-24 bg-[#F4F4F2] flex-grow">
-        <div className="container max-w-6xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-3xl font-bold text-ink mb-16 text-center">Verified Rosid Syndicates Projects</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {projects.map((p, i) => (
-                <motion.div 
-                  key={p.name}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.15, duration: 0.8 }}
-                  className={`group relative overflow-hidden rounded-sm cursor-pointer ${p.colSpan} ${p.height}`}
-                >
-                  {/* Background Image */}
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
-                    style={{ backgroundImage: `url("${p.img}")` }}
-                  />
-                  
-                  {/* Dark Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#011E52]/90 via-[#011E52]/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500" />
-
-                  {/* Content */}
-                  <div className="absolute bottom-0 left-0 p-10 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    <p className="text-[#FD7B00] font-bold text-xs uppercase tracking-widest mb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{p.location}</p>
-                    <h3 className="text-3xl font-bold text-white uppercase tracking-wide leading-snug">{p.name}</h3>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-            
-            <div className="mt-24 text-center">
-              <Link to="/companies" className="inline-flex justify-center items-center gap-2 px-10 py-5 bg-white border border-slate-200 text-ink font-bold text-sm hover:border-[#FD7B00] transition-colors uppercase tracking-widest shadow-sm">
-                Explore Our Capabilities <ArrowRightIcon className="w-4 h-4" />
+      <section className="container py-16 lg:py-24" aria-labelledby="sectors-list-heading">
+        <h2 id="sectors-list-heading" className="sr-only">Sectors</h2>
+        <ul className="grid md:grid-cols-2 gap-5">
+          {sectors.map((s) => (
+            <li key={s.slug}>
+              <Link to={s.to} className="group card card-hover flex flex-col sm:flex-row overflow-hidden h-full focus-visible:ring-2 focus-visible:ring-accent">
+                <img
+                  src={unsplash(s.image, { w: 640, q: 65 })}
+                  srcSet={unsplashSrcSet(s.image, [400, 640, 900], 65)}
+                  sizes="(min-width: 640px) 240px, 100vw"
+                  width={640}
+                  height={480}
+                  loading="lazy"
+                  decoding="async"
+                  alt=""
+                  className="sm:w-60 aspect-[4/3] sm:aspect-auto object-cover"
+                />
+                <div className="p-6 flex flex-col">
+                  <h3 className="text-h3 text-ink group-hover:text-accent-text transition-colors duration-fast">{s.name}</h3>
+                  <p className="mt-2 text-sm text-muted leading-relaxed flex-1">{s.summary}</p>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-ink">
+                    Related capability <ArrowRightIcon className="w-4 h-4" aria-hidden="true" />
+                  </span>
+                </div>
               </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="bg-surface border-y border-line" aria-labelledby="case-studies-heading">
+        <div className="container py-16 lg:py-20">
+          <h2 id="case-studies-heading" className="text-h2">Case studies</h2>
+          {projects.length === 0 ? (
+            <div className="mt-6 card p-6 sm:p-8 max-w-3xl">
+              <p className="text-base text-muted leading-relaxed">
+                Project case studies are published here once client clearance and supporting documents are in place. Until then, statutory registrations and licences are listed on the{' '}
+                <Link to="/credentials" className="link-arrow">credentials page →</Link>
+              </p>
             </div>
-          </motion.div>
+          ) : (
+            <ul className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {projects.map((p) => (
+                <li key={p.slug}>
+                  <Link to={`/project/${p.slug}`} className="card card-hover block p-6 h-full">
+                    <span className="text-xs font-bold uppercase tracking-[0.1em] text-accent-text">{p.sector}</span>
+                    <span className="block mt-2 font-bold text-ink">{p.title}</span>
+                    <span className="block mt-2 text-sm text-muted">{p.shortDescription}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Link to="/tender-inquiry" className="btn-primary">Discuss a tender</Link>
+            <Link to="/companies" className="btn-secondary">Explore the companies</Link>
+          </div>
         </div>
       </section>
     </div>

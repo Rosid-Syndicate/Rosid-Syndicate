@@ -1,43 +1,61 @@
-import { useEffect } from 'react'
+import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Navbar'
-import Home from './pages/Home'
-import ProjectDetail from './pages/ProjectDetail'
-import ServiceDetail from './pages/ServiceDetail'
-import Companies from './pages/Companies'
-import CompanyDetail from './pages/CompanyDetail'
-import AppiSaipal from './pages/AppiSaipal'
-import ForeignContractorWorkflow from './pages/ForeignContractorWorkflow'
-import ProjectsPage from './pages/Projects'
-import GroupStructure from './pages/GroupStructure'
-import CorporateProfile from './pages/CorporateProfile'
-import Procurement from './pages/Procurement'
-import TenderInquiry from './pages/TenderInquiry'
-import CredentialsPage from './pages/Credentials'
-import PrivacyPolicy from './pages/PrivacyPolicy'
-import TermsConditions from './pages/TermsConditions'
-import CookiePolicy from './pages/CookiePolicy'
-import Blog from './pages/Blog'
-import BlogPost from './pages/BlogPost'
-import BlogCategory from './pages/BlogCategory'
 import Footer from './components/Footer'
 import BackToTop from './components/BackToTop'
+import ScrollManager from './components/ScrollManager'
+import Home from './pages/Home'
 import { initAnalytics, trackPageView } from './utils/analytics'
-import { AuthProvider } from './contexts/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute'
-import AdminLayout from './components/AdminLayout'
-import AdminLogin from './pages/admin/Login'
-import AdminDashboard from './pages/admin/Dashboard'
-import AdminInquiries from './pages/admin/Inquiries'
-import AdminCompanies from './pages/admin/Companies'
-import AdminContent from './pages/admin/Content'
-import AdminCredentials from './pages/admin/Credentials'
-import AdminBlog from './pages/admin/Blog'
-import AdminBlogEditor from './pages/admin/BlogEditor'
-import AdminCategories from './pages/admin/Categories'
 
-function AppContent() {
+// Route-level code splitting. The home page stays in the main bundle (it is the
+// LCP-critical route); everything else — and the entire admin — loads on demand.
+// Before this change a single 714 kB chunk shipped the admin, blog editor and
+// every policy page to every visitor.
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'))
+const ServiceDetail = lazy(() => import('./pages/ServiceDetail'))
+const Companies = lazy(() => import('./pages/Companies'))
+const CompanyDetail = lazy(() => import('./pages/CompanyDetail'))
+const AppiSaipal = lazy(() => import('./pages/AppiSaipal'))
+const ForeignContractorWorkflow = lazy(() => import('./pages/ForeignContractorWorkflow'))
+const ProjectsPage = lazy(() => import('./pages/Projects'))
+const GroupStructure = lazy(() => import('./pages/GroupStructure'))
+const CorporateProfile = lazy(() => import('./pages/CorporateProfile'))
+const Procurement = lazy(() => import('./pages/Procurement'))
+const TenderInquiry = lazy(() => import('./pages/TenderInquiry'))
+const CredentialsPage = lazy(() => import('./pages/Credentials'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const TermsConditions = lazy(() => import('./pages/TermsConditions'))
+const CookiePolicy = lazy(() => import('./pages/CookiePolicy'))
+const Blog = lazy(() => import('./pages/Blog'))
+const BlogPost = lazy(() => import('./pages/BlogPost'))
+const BlogCategory = lazy(() => import('./pages/BlogCategory'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+
+const AdminArea = lazy(() => import('./components/AdminArea'))
+const ProtectedRoute = lazy(() => import('./components/ProtectedRoute'))
+const AdminLayout = lazy(() => import('./components/AdminLayout'))
+const AdminLogin = lazy(() => import('./pages/admin/Login'))
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'))
+const AdminInquiries = lazy(() => import('./pages/admin/Inquiries'))
+const AdminCompanies = lazy(() => import('./pages/admin/Companies'))
+const AdminContent = lazy(() => import('./pages/admin/Content'))
+const AdminCredentials = lazy(() => import('./pages/admin/Credentials'))
+const AdminBlog = lazy(() => import('./pages/admin/Blog'))
+const AdminBlogEditor = lazy(() => import('./pages/admin/BlogEditor'))
+const AdminCategories = lazy(() => import('./pages/admin/Categories'))
+
+function RouteFallback() {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center" role="status" aria-live="polite">
+      <span className="sr-only">Loading…</span>
+      <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+    </div>
+  )
+}
+
+/** Route tree + chrome. Rendered inside BrowserRouter on the client and StaticRouter at build time (scripts/prerender.mjs). */
+export function AppContent() {
   const location = useLocation()
   const isAdmin = location.pathname.startsWith('/admin')
 
@@ -50,64 +68,68 @@ function AppContent() {
   }, [location.pathname])
 
   return (
-    <div className="min-h-screen bg-[#F4F4F2] text-slate-600 overflow-x-hidden w-full relative">
+    <div className="min-h-screen bg-canvas text-muted overflow-x-hidden w-full relative">
+      <a href="#main" className="skip-link">Skip to main content</a>
+      <ScrollManager />
       <Toaster
         position="bottom-right"
         toastOptions={{
-          style: {
-            background: '#171717',
-            color: '#fff',
-            borderRadius: 0,
-            fontSize: '13px',
-            fontWeight: 600,
-          },
+          style: { background: '#011E52', color: '#fff', borderRadius: 2, fontSize: '13px', fontWeight: 600 },
+          success: { iconTheme: { primary: '#FD7B00', secondary: '#011E52' } },
         }}
       />
       {!isAdmin && <Navbar />}
-      <main className={!isAdmin ? "" : "min-h-screen"}>
-        <Routes>
-          {/* Admin Routes */}
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route element={<ProtectedRoute />}>
-            <Route element={<AdminLayout><Outlet /></AdminLayout>}>
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-              <Route path="/admin/inquiries" element={<AdminInquiries />} />
-              <Route path="/admin/companies" element={<AdminCompanies />} />
-              <Route path="/admin/content" element={<AdminContent />} />
-              <Route path="/admin/credentials" element={<AdminCredentials />} />
-              <Route path="/admin/blog" element={<AdminBlog />} />
-              <Route path="/admin/blog/create" element={<AdminBlogEditor />} />
-              <Route path="/admin/blog/edit/:id" element={<AdminBlogEditor />} />
-              <Route path="/admin/categories" element={<AdminCategories />} />
+      <main id="main" tabIndex={-1} className={isAdmin ? 'min-h-screen outline-none' : 'outline-none'}>
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            {/* Admin (client-guarded; data access is enforced server-side by RLS).
+                AdminArea provides the auth context and is lazy-loaded so public
+                pages never download the Supabase client or run a session check. */}
+            <Route element={<AdminArea />}>
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<AdminLayout><Outlet /></AdminLayout>}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/inquiries" element={<AdminInquiries />} />
+                <Route path="/admin/companies" element={<AdminCompanies />} />
+                <Route path="/admin/content" element={<AdminContent />} />
+                <Route path="/admin/credentials" element={<AdminCredentials />} />
+                <Route path="/admin/blog" element={<AdminBlog />} />
+                <Route path="/admin/blog/create" element={<AdminBlogEditor />} />
+                <Route path="/admin/blog/edit/:id" element={<AdminBlogEditor />} />
+                <Route path="/admin/categories" element={<AdminCategories />} />
+                </Route>
+              </Route>
             </Route>
-          </Route>
 
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
-          <Route path="/blog/category/:slug" element={<BlogCategory />} />
-          <Route path="/companies" element={<Companies />} />
-          <Route path="/companies/appi-saipal-financial-solutions" element={<AppiSaipal />} />
-          <Route path="/companies/:slug" element={<CompanyDetail />} />
-          <Route path="/infrastructure-tender-services" element={<ForeignContractorWorkflow />} />
-          <Route path="/group-structure" element={<GroupStructure />} />
-          <Route path="/corporate-profile" element={<CorporateProfile />} />
-          <Route path="/procurement" element={<Procurement />} />
-          <Route path="/tender-inquiry" element={<TenderInquiry />} />
-          <Route path="/credentials" element={<CredentialsPage />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/terms-conditions" element={<TermsConditions />} />
-          <Route path="/terms-and-conditions" element={<TermsConditions />} />
-          <Route path="/cookie-policy" element={<CookiePolicy />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/project/:slug" element={<ProjectDetail />} />
-          <Route path="/service/:slug" element={<ServiceDetail />} />
+            {/* Public */}
+            <Route path="/" element={<Home />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/blog/category/:slug" element={<BlogCategory />} />
+            <Route path="/companies" element={<Companies />} />
+            <Route path="/companies/appi-saipal-financial-solutions" element={<AppiSaipal />} />
+            <Route path="/companies/:slug" element={<CompanyDetail />} />
+            <Route path="/infrastructure-tender-services" element={<ForeignContractorWorkflow />} />
+            <Route path="/group-structure" element={<GroupStructure />} />
+            <Route path="/corporate-profile" element={<CorporateProfile />} />
+            <Route path="/procurement" element={<Procurement />} />
+            <Route path="/tender-inquiry" element={<TenderInquiry />} />
+            <Route path="/credentials" element={<CredentialsPage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-conditions" element={<TermsConditions />} />
+            {/* Legacy duplicate URL → single canonical route */}
+            <Route path="/terms-and-conditions" element={<Navigate to="/terms-conditions" replace />} />
+            <Route path="/cookie-policy" element={<CookiePolicy />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/project/:slug" element={<ProjectDetail />} />
+            <Route path="/service/:slug" element={<ServiceDetail />} />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Unknown routes render a real 404 view (noindex) instead of redirecting home */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       {!isAdmin && <Footer />}
       {!isAdmin && <BackToTop />}
@@ -115,14 +137,10 @@ function AppContent() {
   )
 }
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <AppContent />
     </BrowserRouter>
   )
 }
-
-export default App

@@ -1,62 +1,92 @@
-import { Link, useLocation } from 'react-router-dom'
+import { NavLink, Link } from 'react-router-dom'
+import {
+  Squares2X2Icon,
+  DocumentTextIcon,
+  FolderIcon,
+  InboxIcon,
+  BuildingOffice2Icon,
+  PencilSquareIcon,
+  ShieldCheckIcon,
+  ArrowRightStartOnRectangleIcon,
+  ArrowTopRightOnSquareIcon,
+} from '@heroicons/react/24/outline'
 import { useAuth } from '../contexts/AuthContext'
+import Seo from './Seo'
 
 const navItems = [
-  { name: 'Dashboard', href: '/admin/dashboard' },
-  { name: 'Blog Posts', href: '/admin/blog' },
-  { name: 'Categories', href: '/admin/categories' },
-  { name: 'Inquiries', href: '/admin/inquiries' },
-  { name: 'Companies', href: '/admin/companies' },
-  { name: 'Content', href: '/admin/content' },
-  { name: 'Credentials', href: '/admin/credentials' },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: Squares2X2Icon },
+  { name: 'Inquiries', href: '/admin/inquiries', icon: InboxIcon },
+  { name: 'Blog posts', href: '/admin/blog', icon: DocumentTextIcon },
+  { name: 'Categories', href: '/admin/categories', icon: FolderIcon },
+  { name: 'Companies', href: '/admin/companies', icon: BuildingOffice2Icon },
+  { name: 'Site content', href: '/admin/content', icon: PencilSquareIcon },
+  { name: 'Credentials', href: '/admin/credentials', icon: ShieldCheckIcon },
 ]
 
+/**
+ * Admin shell. One light theme for every admin page (three pages previously
+ * rendered white headings on the light background and were unreadable).
+ * Marked noindex; Vercel additionally sends X-Robots-Tag for /admin/*.
+ */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { signOut } = useAuth()
-  const location = useLocation()
+  const { signOut, user } = useAuth()
 
   return (
-    <div className="min-h-screen bg-[#F4F4F2] text-slate-600 font-sans flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-white border-r border-slate-100 flex flex-col shrink-0">
-        <div className="p-6 border-b border-slate-100">
-          <Link to="/" className="flex items-center gap-3 group">
-            <img src="/logo.png" alt="Rosid Syndicates Group Logo" className="h-9 w-auto object-contain" />
-            <span className="text-lg font-display font-black tracking-widest text-ink uppercase group-hover:text-fire transition-colors">ROSID SYNDICATES ADMIN</span>
+    <div className="min-h-screen bg-canvas text-muted flex flex-col lg:flex-row">
+      <Seo title="Admin" path="/admin" noindex />
+
+      <aside className="lg:w-64 shrink-0 bg-surface border-b lg:border-b-0 lg:border-r border-line flex flex-col">
+        <div className="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
+          <Link to="/admin/dashboard" className="flex items-center gap-3 rounded-sm">
+            <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="h-9 w-auto" />
+            <span className="leading-none">
+              <span className="block font-display font-black text-sm tracking-[0.18em] text-ink">ROSID</span>
+              <span className="block text-[10px] font-semibold tracking-[0.14em] uppercase text-muted mt-0.5">Admin</span>
+            </span>
           </Link>
+          <a href="/" target="_blank" rel="noopener" className="lg:hidden btn-ghost btn-sm" aria-label="Open live website in a new tab">
+            <ArrowTopRightOnSquareIcon className="w-4 h-4" aria-hidden="true" />
+          </a>
         </div>
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {navItems.map((item) => {
-            const isActive = location.pathname === item.href
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`block px-4 py-3 rounded-sm text-sm font-bold tracking-widest uppercase transition-colors ${
-                  isActive 
-                    ? 'bg-fire text-[#0f172a]' 
-                    : 'text-slate-500 hover:text-ink hover:bg-white border border-slate-200 shadow-sm'
-                }`}
-              >
-                {item.name}
-              </Link>
-            )
-          })}
+
+        <nav aria-label="Admin" className="flex-1 p-3 overflow-x-auto lg:overflow-visible">
+          <ul className="flex lg:flex-col gap-1">
+            {navItems.map((item) => (
+              <li key={item.href} className="shrink-0">
+                <NavLink
+                  to={item.href}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-sm text-sm font-semibold whitespace-nowrap transition-colors duration-fast ${
+                      isActive ? 'bg-ink text-white' : 'text-ink hover:bg-canvas'
+                    }`
+                  }
+                >
+                  <item.icon className="w-5 h-5 shrink-0" aria-hidden="true" />
+                  {item.name}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
         </nav>
-        <div className="p-4 border-t border-slate-100">
-          <button
-            onClick={signOut}
-            className="w-full px-4 py-3 text-sm font-bold tracking-widest uppercase text-slate-500 hover:text-fire hover:bg-white border border-slate-200 shadow-sm rounded-sm transition-colors text-left"
-          >
-            Logout
+
+        <div className="hidden lg:block p-4 border-t border-line space-y-3">
+          <p className="text-xs text-muted truncate" title={user?.email ?? ''}>{user?.email}</p>
+          <a href="/" target="_blank" rel="noopener" className="btn-secondary btn-sm w-full">
+            Live website <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" aria-hidden="true" />
+          </a>
+          <button type="button" onClick={signOut} className="btn-ghost btn-sm w-full justify-start">
+            <ArrowRightStartOnRectangleIcon className="w-4 h-4" aria-hidden="true" /> Sign out
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-x-hidden">
+      <div className="flex-1 min-w-0">
+        <div className="lg:hidden flex items-center justify-end gap-2 px-4 py-2 border-b border-line bg-surface">
+          <span className="text-xs text-muted truncate mr-auto">{user?.email}</span>
+          <button type="button" onClick={signOut} className="btn-ghost btn-sm">Sign out</button>
+        </div>
         {children}
-      </main>
+      </div>
     </div>
   )
 }

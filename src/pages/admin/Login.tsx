@@ -1,70 +1,58 @@
 import { useState } from 'react'
-import { useNavigate, Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
-import toast from 'react-hot-toast'
+import Seo from '../../components/Seo'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const nav = useNavigate()
   const { user } = useAuth()
 
-  if (user) {
-    return <Navigate to="/admin/dashboard" replace />
-  }
+  if (user) return <Navigate to="/admin/dashboard" replace />
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      toast.error(error.message)
-    } else {
-      toast.success('Secure Admin Access Granted')
-      nav('/admin/dashboard')
-    }
+    setError(null)
+    const { error: authError } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     setLoading(false)
+    if (authError) {
+      // Generic message: do not reveal whether the account exists (enumeration).
+      setError('Sign-in failed. Check your email and password and try again.')
+      return
+    }
+    nav('/admin/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-[#0f172a] p-8 border border-white/5 shadow-2xl">
-        <div className="mb-10 text-center">
-          <img src="/logo.png" alt="Rosid Syndicates Group Logo" className="h-16 w-auto object-contain mx-auto mb-6" />
-          <h1 className="text-xl font-display font-black tracking-[0.2em] text-white uppercase">Corporate Secure Portal</h1>
-          <p className="text-sm text-slate-400 mt-2">Authorized Access Only</p>
+    <div className="min-h-screen bg-ink flex items-center justify-center p-6">
+      <Seo title="Admin sign in" path="/admin/login" noindex />
+      <div className="w-full max-w-md bg-surface p-8 rounded-sm shadow-raised border-t-4 border-t-accent">
+        <div className="mb-8 text-center">
+          <img src="/brand/logo-full-320.png" width={320} height={320} alt="Rosid Syndicates Group" className="h-24 w-auto mx-auto" />
+          <h1 className="mt-6 text-h3 text-ink">Admin sign in</h1>
+          <p className="text-sm text-muted mt-1">Authorised staff only</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-5" noValidate>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Corporate Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#020617] border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-fire transition-colors"
-              required
-            />
+            <label htmlFor="login-email" className="field-label">Email</label>
+            <input id="login-email" name="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} className="field" />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Secure Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#020617] border border-white/10 text-white px-4 py-3 focus:outline-none focus:border-fire transition-colors"
-              required
-            />
+            <label htmlFor="login-password" className="field-label">Password</label>
+            <input id="login-password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="field" />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-fire text-[#0f172a] font-bold text-sm uppercase tracking-widest py-4 hover:bg-fire-100 transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Authenticating...' : 'Establish Secure Connection'}
+          <button type="submit" disabled={loading} className="btn-primary w-full" aria-busy={loading}>
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
+          <div className="min-h-[1.25rem]" aria-live="polite">
+            {error && <p role="alert" className="text-sm text-danger font-medium">{error}</p>}
+          </div>
         </form>
       </div>
     </div>

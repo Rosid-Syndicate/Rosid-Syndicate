@@ -13,7 +13,7 @@ export const companies: Company[] = [
     slug: 'roshan-enterprises',
     shortDescription: 'Bulk supply of certified construction materials and public-private procurement.',
     coreScope: 'Construction Supply, Public-Private Procurement, Retail & Hospitality',
-    image: 'https://images.unsplash.com/photo-1541888056262-563b7852f826?q=100&w=3840&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1541888056262-563b7852f826',
     services: [
       'Construction Material Supply',
       'Bulk supply of certified construction materials',
@@ -51,7 +51,7 @@ export const companies: Company[] = [
     slug: 'kasthamandap-commerce',
     shortDescription: 'Nationwide trading, sourcing, and supply-only civil tenders.',
     coreScope: 'Nationwide Trading & Supply-Only Civil Tenders',
-    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=100&w=3840&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d',
     services: [
       'Domestic Trading Networks',
       'Import',
@@ -66,7 +66,7 @@ export const companies: Company[] = [
     slug: 'b-c-exim',
     shortDescription: 'Import and export operations, warehousing, and last-mile distribution logistics.',
     coreScope: 'Import/Export Execution & Local Distribution Logistics',
-    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=100&w=3840&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158',
     services: [
       'Cross-Border Trade',
       'Import operations',
@@ -85,7 +85,7 @@ export const companies: Company[] = [
     slug: 'deiyougo-enterprises',
     shortDescription: 'Government contract bidding and commercial sourcing of specialized equipment.',
     coreScope: 'Government Contract Bidding & Commercial Sourcing',
-    image: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?q=100&w=3840&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c',
     services: [
       'Government Procurement',
       'Public-sector procurement programs',
@@ -102,7 +102,7 @@ export const companies: Company[] = [
     slug: 'vharmal-singh-construction',
     shortDescription: 'Civil works execution, earthworks, and integrated supply & build contracts.',
     coreScope: 'Civil Construction Execution & Public Infrastructure Delivery',
-    image: 'https://images.unsplash.com/photo-1544971587-c1555541c5d4?q=100&w=3840&auto=format&fit=crop',
+    image: 'https://images.unsplash.com/photo-1544971587-c1555541c5d4',
     services: [
       'Civil Works Execution',
       'Earthworks',
