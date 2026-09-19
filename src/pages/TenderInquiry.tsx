@@ -250,14 +250,16 @@ export default function TenderInquiry() {
             </fieldset>
 
             <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-5 sm:justify-between">
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={setTurnstileToken}
-                onExpire={() => setTurnstileToken('')}
-                options={{ theme: 'light', size: 'flexible' }}
-              />
-              <button type="submit" disabled={disabled} className="btn-primary w-full sm:w-auto" aria-busy={status === 'loading'}>
+              <div className="turnstile-slot">
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken('')}
+                  options={{ theme: 'light', size: 'flexible' }}
+                />
+              </div>
+              <button type="submit" disabled={disabled} className="btn-primary w-full sm:w-auto shrink-0 whitespace-nowrap" aria-busy={status === 'loading'}>
                 {status === 'loading' ? 'Submitting…' : status === 'success' ? 'Inquiry sent' : 'Submit inquiry'}
               </button>
             </div>

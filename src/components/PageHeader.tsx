@@ -45,7 +45,7 @@ export default function PageHeader({
         aria-hidden="true"
         decoding="async"
         fetchPriority="high"
-        className="absolute inset-0 w-full h-full object-cover opacity-25 mix-blend-luminosity"
+        className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/60" aria-hidden="true" />
       <div className="absolute inset-x-0 top-0 h-1 bg-accent" aria-hidden="true" />

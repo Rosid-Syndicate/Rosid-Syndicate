@@ -101,6 +101,13 @@
   .card { @apply bg-surface border border-line rounded-sm shadow-card; }
   .card-hover { @apply transition-shadow duration-base hover:shadow-raised; }
 
+  /* Fieldset legends render inside the card instead of on its border */
+  fieldset.card > legend { float: left; width: 100%; padding: 0; }
+  fieldset.card > legend + * { clear: both; }
+
+  /* Turnstile container: bounded width so the submit button never wraps */
+  .turnstile-slot { @apply w-full sm:w-auto sm:min-w-[300px] sm:max-w-sm; }
+
   /* Form controls (public + admin) */
   .field {
     @apply w-full bg-canvas border border-line rounded-sm px-4 py-3 text-ink placeholder:text-slate-400 transition-colors duration-fast;

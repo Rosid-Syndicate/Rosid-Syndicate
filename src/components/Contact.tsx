@@ -161,17 +161,19 @@ export default function Contact() {
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-5 sm:justify-between">
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={TURNSTILE_SITE_KEY}
-                onSuccess={setTurnstileToken}
-                onExpire={() => setTurnstileToken('')}
-                options={{ theme: 'light', size: 'flexible' }}
-              />
+              <div className="turnstile-slot">
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken('')}
+                  options={{ theme: 'light', size: 'flexible' }}
+                />
+              </div>
               <button
                 type="submit"
                 disabled={disabled}
-                className="btn-primary w-full sm:w-auto"
+                className="btn-primary w-full sm:w-auto shrink-0 whitespace-nowrap"
                 aria-busy={status === 'loading'}
               >
                 {status === 'loading' ? 'Sending…' : status === 'success' ? 'Sent' : 'Send message'}
