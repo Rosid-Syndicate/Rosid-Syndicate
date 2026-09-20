@@ -110,6 +110,19 @@ export default function Footer() {
             </ul>
           </nav>
         </div>
+
+        {/* Agency credit: same divider, spacing and type scale as the legal bar above; deliberately quieter than the company's own content. */}
+        <p className="mt-6 pt-5 border-t border-white/10 text-center text-xs text-slate-400">
+          Website by{' '}
+          <a
+            href="https://www.tradiedigitalagency.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold whitespace-nowrap text-accent underline-offset-4 transition duration-fast hover:brightness-110 hover:underline rounded-sm"
+          >
+            Tradie Digital Agency<span className="sr-only"> (opens in a new tab)</span>
+          </a>
+        </p>
       </div>
     </footer>
   )

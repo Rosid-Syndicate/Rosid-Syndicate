@@ -90,7 +90,7 @@ swap does not shift layout. `font-black` resolves to 800.
 
 Headings use `text-wrap: balance`; paragraphs `text-wrap: pretty`. One `<h1>`
 per page. Section headings are `<h2>`; cards inside a section use `<h3>`.
-Footer column titles are `<h3>` under a visually-hidden `<h2>`.
+Footer column titles are `<h3>` under a visually-hidden `<h2>`. The agency credit ("Website by …") sits below the legal bar on its own `border-white/10` divider: `text-xs text-slate-400`, link `text-accent` with `hover:brightness-110 hover:underline`, external-link attributes, global focus ring — never louder than the company's own content.
 
 ### 2.3 Spacing
 
