@@ -14,3 +14,12 @@ additional_redirect_urls = [
 # Staff accounts are created by an administrator (Authentication → Users);
 # public self-registration must stay off (SECURITY_AUDIT.md finding C-1).
 enable_signup = false
+
+# Turn the sign-in human check into a real gate: Supabase verifies the token
+# the login page sends. Uncomment and run
+#   TURNSTILE_SECRET_KEY=<secret> npx supabase config push
+# (the secret is read from the environment, never stored in this file).
+# [auth.captcha]
+# enabled = true
+# provider = "turnstile"
+# secret = "env(TURNSTILE_SECRET_KEY)"

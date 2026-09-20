@@ -7,13 +7,14 @@ import { useAuth } from '../../contexts/AuthContext'
 import Seo from '../../components/Seo'
 import { SITE_HOST, SITE_NAME } from '../../config/site'
 
-// The human check on sign-in is opt-in: set VITE_AUTH_CAPTCHA=true only after
-// enabling "Attack protection → CAPTCHA" (Turnstile) in Supabase, which is what
-// actually verifies the token. Rendering the widget without that is friction
-// with no security benefit, and a network that cannot reach Cloudflare's
-// challenge hosts sees a failed widget on a page that never needed one.
+// Human check on sign-in and password reset: shown whenever a Turnstile site
+// key is configured (VITE_AUTH_CAPTCHA=false hides it). The token is forwarded
+// to Supabase Auth, which verifies it once "Attack protection → CAPTCHA"
+// (Turnstile) is enabled there and ignores it otherwise. Submission is never
+// blocked on the client, so a network that cannot reach Cloudflare's challenge
+// hosts cannot lock staff out.
 const TURNSTILE_SITE_KEY: string = import.meta.env.VITE_TURNSTILE_SITE_KEY || (import.meta.env.DEV ? '1x00000000000000000000AA' : '')
-const CAPTCHA_ENABLED = import.meta.env.VITE_AUTH_CAPTCHA === 'true' && TURNSTILE_SITE_KEY.length > 0
+const CAPTCHA_ENABLED = TURNSTILE_SITE_KEY.length > 0 && import.meta.env.VITE_AUTH_CAPTCHA !== 'false'
 // Google sign-in needs the provider enabled in Supabase; keep the button hidden until then.
 const GOOGLE_ENABLED = import.meta.env.VITE_AUTH_GOOGLE_SIGNIN === 'true'
 
