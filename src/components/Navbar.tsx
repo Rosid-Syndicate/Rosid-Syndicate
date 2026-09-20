@@ -153,12 +153,12 @@ export default function Navbar() {
               width={128}
               height={128}
               alt=""
-              className={`w-auto transition-[height] duration-base ${scrolled ? 'h-10' : 'h-12'}`}
+              className={`w-auto transition-[height] duration-base ${scrolled ? 'h-11' : 'h-14'}`}
             />
           </picture>
-          <span className="sr-only sm:not-sr-only sm:block leading-none">
-            <span className="block font-display font-black text-lg tracking-[0.18em] text-ink">ROSID</span>
-            <span className="block text-[11px] font-semibold tracking-[0.14em] uppercase text-muted mt-1">Syndicates Group</span>
+          <span className="block leading-none">
+            <span className="block font-display font-black text-base sm:text-lg tracking-[0.18em] text-ink">ROSID</span>
+            <span className="block text-[10px] sm:text-[11px] font-semibold tracking-[0.14em] uppercase text-muted mt-1">Syndicates Group</span>
             <span className="sr-only">, home</span>
           </span>
         </Link>
@@ -205,7 +205,7 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile panel */}
-      <div id={mobileId} hidden={!mobileOpen} className="lg:hidden border-t border-line bg-white max-h-[calc(100dvh-4.5rem)] overflow-y-auto">
+      <div id={mobileId} hidden={!mobileOpen} className="lg:hidden border-t border-line bg-white max-h-[calc(100dvh-5.5rem)] overflow-y-auto">
         <nav aria-label="Primary mobile" className="container py-4">
           <ul className="divide-y divide-line">
             {NAV.map((entry) => (
