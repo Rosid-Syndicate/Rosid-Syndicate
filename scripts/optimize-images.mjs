@@ -8,6 +8,7 @@
 
 import sharp from 'sharp'
 import { mkdir, stat } from 'node:fs/promises'
+import { writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 const root = process.cwd()
@@ -46,6 +47,40 @@ async function main() {
 
   // Structured-data / favicon-sized square mark on white (schema.org logo).
   await emit(mark, out('brand/logo-square-512.png'), sharp(mark).resize(512, 512, { fit: 'contain', background: '#ffffff' }).flatten({ background: '#ffffff' }).png({ compressionLevel: 9 }))
+
+  // Favicons — the real emblem at every size browsers and Google ask for.
+  // Transparent PNGs for tabs (the mark reads on light and dark chrome), a
+  // white-backed 180px Apple touch icon (iOS ignores transparency), a
+  // 512/192 pair for the web manifest, and a multi-size favicon.ico built
+  // from PNG frames (valid per the ICO spec; what /favicon.ico requesters get).
+  const icon = (px, bg) =>
+    bg
+      ? sharp(mark).resize(px, px, { fit: 'contain', background: bg }).flatten({ background: bg }).png({ compressionLevel: 9 })
+      : sharp(mark).resize(px, px, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png({ compressionLevel: 9 })
+  for (const px of [32, 48, 96, 192]) await emit(mark, out(`favicon-${px}x${px}.png`), icon(px))
+  await emit(mark, out('apple-touch-icon.png'), icon(180, '#ffffff'))
+  await emit(mark, out('icon-512.png'), icon(512))
+  const frames = await Promise.all([16, 32, 48].map((px) => icon(px).toBuffer().then((buf) => ({ px, buf }))))
+  const header = Buffer.alloc(6)
+  header.writeUInt16LE(0, 0)
+  header.writeUInt16LE(1, 2)
+  header.writeUInt16LE(frames.length, 4)
+  let offset = 6 + 16 * frames.length
+  const dir = frames.map(({ px, buf }) => {
+    const e = Buffer.alloc(16)
+    e.writeUInt8(px === 256 ? 0 : px, 0)
+    e.writeUInt8(px === 256 ? 0 : px, 1)
+    e.writeUInt8(0, 2)
+    e.writeUInt8(0, 3)
+    e.writeUInt16LE(1, 4)
+    e.writeUInt16LE(32, 6)
+    e.writeUInt32LE(buf.length, 8)
+    e.writeUInt32LE(offset, 12)
+    offset += buf.length
+    return e
+  })
+  writeFileSync(out('favicon.ico'), Buffer.concat([header, ...dir, ...frames.map((f) => f.buf)]))
+  console.log('favicon.ico', `(${frames.map((f) => f.px).join('/')} px)`)
 
   // Hydropower photo used on the Appi Saipal page (rendered ≤ 1200 px wide).
   const hydro = out('hydropower-plant.jpg')
