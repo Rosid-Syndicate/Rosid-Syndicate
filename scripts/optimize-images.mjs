@@ -33,11 +33,14 @@ async function main() {
   await mkdir(out('brand'), { recursive: true })
   await mkdir(out('img'), { recursive: true })
 
-  // Logo mark: rendered at 44–64 px tall → 128 px (2x) and 192 px (3x).
-  const mark = out('logo-emblem-transparent.png')
+  // Logo mark: the source PNG carries ~42% transparent padding, so it is
+  // trimmed to the visible emblem first — a 56 px box then shows a 56 px mark.
+  // Rendered at 46–60 px tall → 128 px (2x) and 192 px (3x).
+  const markSrc = out('logo-emblem-transparent.png')
+  const mark = await sharp(markSrc).trim().png().toBuffer()
   for (const h of [128, 192]) {
-    await emit(mark, out(`brand/logo-mark-${h}.webp`), sharp(mark).resize({ height: h }).webp({ quality: 88, effort: 6 }))
-    await emit(mark, out(`brand/logo-mark-${h}.png`), sharp(mark).resize({ height: h }).png({ compressionLevel: 9, palette: true }))
+    await emit(markSrc, out(`brand/logo-mark-${h}.webp`), sharp(mark).resize({ height: h }).webp({ quality: 88, effort: 6 }))
+    await emit(markSrc, out(`brand/logo-mark-${h}.png`), sharp(mark).resize({ height: h }).png({ compressionLevel: 9, palette: true }))
   }
 
   // Full logo (with wordmark) for the admin login and email/social fallbacks.
@@ -46,20 +49,23 @@ async function main() {
   await emit(full, out('brand/logo-full-320.png'), sharp(full).resize({ width: 320 }).png({ compressionLevel: 9, palette: true }))
 
   // Structured-data / favicon-sized square mark on white (schema.org logo).
-  await emit(mark, out('brand/logo-square-512.png'), sharp(mark).resize(512, 512, { fit: 'contain', background: '#ffffff' }).flatten({ background: '#ffffff' }).png({ compressionLevel: 9 }))
+  await emit(markSrc, out('brand/logo-square-512.png'), sharp(mark).resize(440, 440, { fit: 'contain', background: '#ffffff' }).extend({ top: 36, bottom: 36, left: 36, right: 36, background: '#ffffff' }).flatten({ background: '#ffffff' }).png({ compressionLevel: 9 }))
 
   // Favicons — the real emblem at every size browsers and Google ask for.
   // Transparent PNGs for tabs (the mark reads on light and dark chrome), a
   // white-backed 180px Apple touch icon (iOS ignores transparency), a
   // 512/192 pair for the web manifest, and a multi-size favicon.ico built
   // from PNG frames (valid per the ICO spec; what /favicon.ico requesters get).
-  const icon = (px, bg) =>
-    bg
-      ? sharp(mark).resize(px, px, { fit: 'contain', background: bg }).flatten({ background: bg }).png({ compressionLevel: 9 })
-      : sharp(mark).resize(px, px, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png({ compressionLevel: 9 })
-  for (const px of [32, 48, 96, 192]) await emit(mark, out(`favicon-${px}x${px}.png`), icon(px))
-  await emit(mark, out('apple-touch-icon.png'), icon(180, '#ffffff'))
-  await emit(mark, out('icon-512.png'), icon(512))
+  const icon = (px, bg) => {
+    const fill = bg || { r: 0, g: 0, b: 0, alpha: 0 }
+    const inner = Math.round(px * 0.9)
+    const pad = Math.floor((px - inner) / 2)
+    const p = sharp(mark).resize(inner, inner, { fit: 'contain', background: fill }).extend({ top: pad, bottom: px - inner - pad, left: pad, right: px - inner - pad, background: fill })
+    return (bg ? p.flatten({ background: bg }) : p).png({ compressionLevel: 9 })
+  }
+  for (const px of [32, 48, 96, 192]) await emit(markSrc, out(`favicon-${px}x${px}.png`), icon(px))
+  await emit(markSrc, out('apple-touch-icon.png'), icon(180, '#ffffff'))
+  await emit(markSrc, out('icon-512.png'), icon(512))
   const frames = await Promise.all([16, 32, 48].map((px) => icon(px).toBuffer().then((buf) => ({ px, buf }))))
   const header = Buffer.alloc(6)
   header.writeUInt16LE(0, 0)

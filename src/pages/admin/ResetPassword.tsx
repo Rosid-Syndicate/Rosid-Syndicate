@@ -63,7 +63,7 @@ export default function ResetPassword() {
     <div className="min-h-screen bg-canvas flex flex-col items-center justify-center px-5 py-10 sm:px-8">
       <Seo title="Choose a new password" path="/admin/reset-password" noindex />
       <div className="mb-8 flex items-center gap-3">
-        <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="h-10 w-10 rounded-sm bg-white p-1 shadow-card" />
+        <img src="/brand/logo-mark-128.png" width={141} height={128} alt="" className="h-10 w-10 rounded-sm bg-white p-1 shadow-card" />
         <div>
           <p className="text-sm font-bold text-ink">{SITE_NAME}</p>
           <p className="text-xs text-muted">Admin console</p>

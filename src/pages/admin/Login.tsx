@@ -172,7 +172,7 @@ export default function Login() {
         </div>
 
         <div className="relative flex items-center gap-3">
-          <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="h-11 w-11 rounded-sm bg-white p-1" />
+          <img src="/brand/logo-mark-128.png" width={141} height={128} alt="" className="h-11 w-11 rounded-sm bg-white p-1" />
           <div>
             <p className="text-sm font-bold tracking-wide">{SITE_NAME}</p>
             <p className="text-xs text-white/60">Admin console</p>
@@ -209,7 +209,7 @@ export default function Login() {
         <div className="pointer-events-none absolute -top-40 -right-24 h-96 w-96 rounded-full bg-accent/10 blur-3xl" aria-hidden="true" />
         <div className="pointer-events-none absolute inset-0 bg-dots-light bg-dots [mask-image:linear-gradient(to_bottom,black,transparent_60%)]" aria-hidden="true" />
         <div className="relative mb-6 flex items-center gap-3 lg:hidden">
-          <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="h-10 w-10 rounded-sm bg-white p-1 shadow-card" />
+          <img src="/brand/logo-mark-128.png" width={141} height={128} alt="" className="h-10 w-10 rounded-sm bg-white p-1 shadow-card" />
           <div>
             <p className="text-sm font-bold text-ink">{SITE_NAME}</p>
             <p className="text-xs text-muted">Admin console</p>

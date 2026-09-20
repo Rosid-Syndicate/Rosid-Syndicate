@@ -170,7 +170,7 @@ export default function Navbar() {
             <img
               src="/brand/logo-mark-128.png"
               srcSet="/brand/logo-mark-128.png 1x, /brand/logo-mark-192.png 1.5x"
-              width={128}
+              width={141}
               height={128}
               alt=""
               className="h-[var(--header-logo)] w-auto transition-[height] duration-[var(--header-transition)] ease-out"

@@ -60,7 +60,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <aside className="lg:w-64 shrink-0 bg-surface border-b lg:border-b-0 lg:border-r border-line flex flex-col lg:sticky lg:top-0 lg:h-screen">
           <div className="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
             <Link to="/admin/dashboard" className="flex items-center gap-3 rounded-sm">
-              <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="h-9 w-auto" />
+              <img src="/brand/logo-mark-128.png" width={141} height={128} alt="" className="h-9 w-auto" />
               <span className="leading-none">
                 <span className="block font-display font-black text-sm tracking-[0.18em] text-ink">ROSID</span>
                 <span className="block text-[10px] font-semibold tracking-[0.14em] uppercase text-muted mt-0.5">Admin</span>

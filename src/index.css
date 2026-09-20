@@ -30,14 +30,14 @@
      once the page has scrolled). Consumers (anchor scroll offset, mobile panel
      height, hero padding) read --header-height so nothing is hard-coded twice. */
   :root {
-    --header-logo: 3rem;          /* 48px mobile */
-    --header-py: 0.75rem;         /* 12px */
+    --header-logo: 3.25rem;       /* 52px mobile → 73px header */
+    --header-py: 0.625rem;        /* 10px */
     --header-transition: 200ms;
     --header-height: calc(var(--header-logo) + var(--header-py) * 2 + 1px);
   }
   @screen lg {
     :root {
-      --header-logo: 3.5rem;      /* 56px desktop → 88px header */
+      --header-logo: 3.75rem;     /* 60px desktop → 93px header */
       --header-py: 1rem;
     }
   }
@@ -47,12 +47,12 @@
     --header-height: calc(var(--header-logo) + var(--header-py) * 2 + 1px);
   }
   .site-header[data-compact='true'] {
-    --header-logo: 2.75rem;       /* 44px (0.92×) → 64px header */
-    --header-py: 0.625rem;
+    --header-logo: 2.875rem;      /* 46px (0.88×) → 63px header */
+    --header-py: 0.5rem;
   }
   @screen lg {
     .site-header[data-compact='true'] {
-      --header-logo: 3.125rem;    /* 50px (0.89×) → 75px header */
+      --header-logo: 3.375rem;    /* 54px (0.90×) → 79px header */
       --header-py: 0.75rem;
     }
   }

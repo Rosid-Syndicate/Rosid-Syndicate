@@ -37,7 +37,7 @@ export default function Footer() {
             <Link to="/" className="inline-flex items-center gap-3 rounded-sm">
               <picture>
                 <source type="image/webp" srcSet="/brand/logo-mark-128.webp" />
-                <img src="/brand/logo-mark-128.png" width={128} height={128} alt="" className="h-12 w-auto bg-white rounded-sm p-1" />
+                <img src="/brand/logo-mark-128.png" width={141} height={128} alt="" className="h-12 w-auto bg-white rounded-sm p-1" />
               </picture>
               <span className="leading-none">
                 <span className="block font-display font-black text-lg tracking-[0.18em] text-white">ROSID</span>
