@@ -109,11 +109,30 @@ export default function Navbar() {
   const mobileId = useId()
   const headerRef = useRef<HTMLElement>(null)
 
+  // Compact state: one passive listener, coalesced to a frame, with hysteresis
+  // (compact above 32px, normal again below 8px) so the header never flickers
+  // around the threshold. State is written only when it actually changes.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10)
+    let frame = 0
+    let compact = false
+    const update = () => {
+      frame = 0
+      const y = window.scrollY
+      const next = compact ? y > 8 : y > 32
+      if (next !== compact) {
+        compact = next
+        setScrolled(next)
+      }
+    }
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(update)
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
-    onScroll()
-    return () => window.removeEventListener('scroll', onScroll)
+    update()
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
   }, [])
 
   // Close menus on navigation
@@ -141,9 +160,10 @@ export default function Navbar() {
   return (
     <header
       ref={headerRef}
-      className={`fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-md border-b border-line transition-shadow duration-base ${scrolled ? 'shadow-card' : ''}`}
+      data-compact={scrolled ? 'true' : 'false'}
+      className={`site-header fixed top-0 inset-x-0 z-50 border-b border-line backdrop-blur-sm transition-[box-shadow,background-color] duration-[var(--header-transition)] ease-out ${scrolled ? 'bg-white shadow-card' : 'bg-white/95'}`}
     >
-      <nav aria-label="Primary" className={`container flex items-center justify-between gap-6 transition-[padding] duration-base ${scrolled ? 'py-3' : 'py-4'}`}>
+      <nav aria-label="Primary" className="container flex items-center justify-between gap-6 py-[var(--header-py)] transition-[padding] duration-[var(--header-transition)] ease-out">
         <Link to="/" className="flex items-center gap-3 shrink-0 rounded-sm">
           <picture>
             <source type="image/webp" srcSet="/brand/logo-mark-128.webp 1x, /brand/logo-mark-192.webp 1.5x" />
@@ -153,7 +173,7 @@ export default function Navbar() {
               width={128}
               height={128}
               alt=""
-              className={`w-auto transition-[height] duration-base ${scrolled ? 'h-11' : 'h-14'}`}
+              className="h-[var(--header-logo)] w-auto transition-[height] duration-[var(--header-transition)] ease-out"
             />
           </picture>
           <span className="block leading-none">
@@ -205,7 +225,7 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile panel */}
-      <div id={mobileId} hidden={!mobileOpen} className="lg:hidden border-t border-line bg-white max-h-[calc(100dvh-5.5rem)] overflow-y-auto">
+      <div id={mobileId} hidden={!mobileOpen} className="lg:hidden border-t border-line bg-white max-h-[calc(100dvh-var(--header-height))] overflow-y-auto">
         <nav aria-label="Primary mobile" className="container py-4">
           <ul className="divide-y divide-line">
             {NAV.map((entry) => (

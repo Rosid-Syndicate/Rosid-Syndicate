@@ -123,6 +123,7 @@ All component classes are in `src/index.css` (`@layer components`).
 
 | Component | Class / file | Notes |
 |---|---|---|
+| Global header | `src/components/Navbar.tsx` + tokens in `src/index.css` (`--header-logo`, `--header-py`, `--header-height`, `--header-transition`) | One header, two states: normal (desktop 88 px / 56 px logo, mobile 72 px / 48 px) and compact after 32 px of scroll (75 px / 50 px, mobile 64 px / 44 px). 200 ms padding/height transition, reduced-motion aware, hysteresis so it never flickers. Same nav, buttons and colours in both states; menu button stays 44 px. |
 | Button, primary | `.btn-primary` | `ink` bg, white text. Default CTA on light and dark. |
 | Button, accent | `.btn-accent` | `accent` bg, **`ink` text** (white on orange fails AA). Use once per dark section for the main action. |
 | Button, secondary | `.btn-secondary` | Surface + `line` border. |

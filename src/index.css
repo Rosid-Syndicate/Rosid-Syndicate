@@ -26,9 +26,45 @@
    Base
    --------------------------------------------------------------------------- */
 @layer base {
+  /* Global header sizing — one header, two states (normal → slightly compact
+     once the page has scrolled). Consumers (anchor scroll offset, mobile panel
+     height, hero padding) read --header-height so nothing is hard-coded twice. */
+  :root {
+    --header-logo: 3rem;          /* 48px mobile */
+    --header-py: 0.75rem;         /* 12px */
+    --header-transition: 200ms;
+    --header-height: calc(var(--header-logo) + var(--header-py) * 2 + 1px);
+  }
+  @screen lg {
+    :root {
+      --header-logo: 3.5rem;      /* 56px desktop → 88px header */
+      --header-py: 1rem;
+    }
+  }
+  /* Re-declared here so descendants (mobile panel) see the compact height:
+     a custom property's var() references resolve where it is declared. */
+  .site-header {
+    --header-height: calc(var(--header-logo) + var(--header-py) * 2 + 1px);
+  }
+  .site-header[data-compact='true'] {
+    --header-logo: 2.75rem;       /* 44px (0.92×) → 64px header */
+    --header-py: 0.625rem;
+  }
+  @screen lg {
+    .site-header[data-compact='true'] {
+      --header-logo: 3.125rem;    /* 50px (0.89×) → 75px header */
+      --header-py: 0.75rem;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .site-header,
+    .site-header * {
+      transition-duration: 0ms !important;
+    }
+  }
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 5.5rem;
+    scroll-padding-top: calc(var(--header-height) + 1rem);
     -webkit-text-size-adjust: 100%;
   }
   body {
