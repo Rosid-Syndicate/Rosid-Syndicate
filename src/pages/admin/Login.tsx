@@ -130,15 +130,19 @@ export default function Login() {
     resetCaptcha()
   }
 
+  // Same widget configuration as the public forms (one Cloudflare widget, one
+  // behaviour). `key` remounts it when the card switches between sign-in and
+  // reset so a token issued for one form is never reused for the other.
   const captcha = CAPTCHA_ENABLED && (
     <div className="turnstile-slot !w-full !max-w-none">
       <Turnstile
+        key={mode}
         ref={turnstileRef}
         siteKey={TURNSTILE_SITE_KEY}
         onSuccess={setCaptchaToken}
         onExpire={() => setCaptchaToken('')}
         onError={() => setCaptchaToken('')}
-        options={{ theme: 'light', size: 'flexible', action: mode === 'signin' ? 'login' : 'password-reset' }}
+        options={{ theme: 'light', size: 'flexible' }}
       />
     </div>
   )
