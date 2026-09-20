@@ -319,3 +319,16 @@ test('home-content: GET only, never cached on failure, cached with SWR on succes
   assert.equal(down.statusCode, 503)
   assert.equal(down.headers['cache-control'], 'no-store')
 })
+
+test('health: GET only, 503 when the database is unconfigured, no caching', async () => {
+  const { default: health } = await import('../api/health.js')
+  const bad = mockRes()
+  await health(mockReq({ method: 'POST' }), bad)
+  assert.equal(bad.statusCode, 405)
+  delete process.env.SUPABASE_URL
+  delete process.env.VITE_SUPABASE_URL
+  const res = mockRes()
+  await health(mockReq({ method: 'GET' }), res)
+  assert.equal(res.statusCode, 503)
+  assert.equal(res.headers['cache-control'], 'no-store')
+})

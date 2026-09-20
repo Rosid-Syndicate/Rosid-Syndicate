@@ -12,7 +12,7 @@ Production: https://www.rosiddai.com (Vercel project `rosid-sydnicate`; all `*.v
 |---|---|
 | UI | React 18 · TypeScript · Vite 6 · Tailwind CSS 3 · React Router 7 (`BrowserRouter`) |
 | Data & auth | Supabase (Postgres + Row Level Security, Auth, Storage); staff roles `admin` / `editor` |
-| Serverless | Vercel Node functions in `api/` (`/api/contact`, `/api/tender`, `/api/sitemap`, `/api/home-content`) |
+| Serverless | Vercel Node functions in `api/` (`/api/contact`, `/api/tender`, `/api/sitemap`, `/api/home-content`, `/api/health` daily cron keep-alive) |
 | Anti-abuse | Cloudflare Turnstile, honeypot, per-endpoint rate limits (optional Upstash Redis), duplicate suppression |
 | Email | Resend |
 | Editor | TipTap 3 (MIT) storing Markdown; images uploaded to the `site-media` bucket |

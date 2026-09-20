@@ -16,6 +16,7 @@ Vercel Authentication on every `*.vercel.app` host.
 | `/api/tender` | POST | none | as above | as above + attachment allow-list (pdf/docx/xlsx, magic bytes, ≤ 2 MB) | 3/h/IP · 8/d/IP · 4/d/sender | `no-store` | ~3 MB | as above | HIGH |
 | `/api/home-content` | GET/HEAD | none | anon key → RLS: published rows only | edge Bot Protection | edge cache absorbs load | `public, max-age=60, s-maxage=300, swr=1d`; `no-store` on 503 | — | n/a (read) | LOW |
 | `/sitemap.xml` → `/api/sitemap` | GET | none | anon key → RLS | edge Bot Protection (verified crawlers exempt) | edge cache | `s-maxage=3600`, swr 1 d | — | n/a | LOW–MEDIUM |
+| `/api/health` | GET/HEAD | none | anon key, reads one id | edge Bot Protection | daily Vercel Cron | `no-store` | — | n/a | LOW (liveness + Supabase keep-alive) |
 | `/api/*` | OPTIONS | none | CORS preflight for allowed origins only | — | — | — | — | — | — |
 | `/api/*` | other methods | — | — | — | — | — | — | — | 405 with `Allow` |
 
