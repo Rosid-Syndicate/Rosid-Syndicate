@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { PlusIcon, TrashIcon, ArrowLeftIcon, FolderIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, TrashIcon, ArrowLeftIcon, FolderIcon, PencilSquareIcon } from '@heroicons/react/24/outline'
 import { supabase } from '../../lib/supabase'
 import type { BlogCategory } from '../../data/blog'
 import { useConfirm } from '../../components/ConfirmDialog'
@@ -17,6 +17,10 @@ export default function AdminCategories() {
   const [slugTouched, setSlugTouched] = useState(false)
   const [description, setDescription] = useState('')
   const [adding, setAdding] = useState(false)
+  // Inline editing of one category at a time
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [draft, setDraft] = useState({ name: '', slug: '', description: '' })
+  const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.from('blog_categories').select('id, name, slug, description').order('name').limit(200)
@@ -53,6 +57,59 @@ export default function AdminCategories() {
     setSlugTouched(false)
     setDescription('')
     load()
+  }
+
+  const startEdit = (cat: BlogCategory) => {
+    setEditingId(cat.id)
+    setDraft({ name: cat.name, slug: cat.slug, description: cat.description || '' })
+  }
+
+  /**
+   * Saves the edited category and keeps articles in step: posts store the
+   * category name and slug, so a rename updates every post that used the old
+   * slug. Both steps report their real outcome.
+   */
+  const saveEdit = async (cat: BlogCategory) => {
+    const finalSlug = slugify(draft.slug || draft.name)
+    const finalName = draft.name.trim()
+    if (!finalName || !finalSlug) {
+      toast.error('Category name and slug are required.')
+      return
+    }
+    setSaving(true)
+    const { error } = await supabase
+      .from('blog_categories')
+      .update({ name: finalName, slug: finalSlug, description: draft.description.trim() || null })
+      .eq('id', cat.id)
+    if (error) {
+      setSaving(false)
+      toast.error(/duplicate key/i.test(error.message) ? 'That slug already exists.' : `Could not save: ${error.message}`)
+      return
+    }
+    let postsNote = ''
+    let postsFailed = false
+    if (finalName !== cat.name || finalSlug !== cat.slug) {
+      const { data: moved, error: postsError } = await supabase
+        .from('blog_posts')
+        .update({ category: finalName, category_slug: finalSlug })
+        .eq('category_slug', cat.slug)
+        .select('id')
+      if (postsError) {
+        postsFailed = true
+        postsNote = ` — but posts could not be relinked: ${postsError.message}`
+      } else if (moved && moved.length) {
+        postsNote = ` · ${moved.length} post${moved.length === 1 ? '' : 's'} updated`
+      }
+    }
+    setSaving(false)
+    setCategories((list) =>
+      list
+        .map((c) => (c.id === cat.id ? { ...c, name: finalName, slug: finalSlug, description: draft.description.trim() } : c))
+        .sort((a, b) => a.name.localeCompare(b.name))
+    )
+    setEditingId(null)
+    if (postsFailed) toast.error('Category saved' + postsNote)
+    else toast.success('Category saved' + postsNote)
   }
 
   const remove = async (cat: BlogCategory) => {
@@ -113,21 +170,65 @@ export default function AdminCategories() {
             <p className="p-6 text-sm text-muted">No categories yet.</p>
           ) : (
             <ul className="divide-y divide-line">
-              {categories.map((cat) => (
-                <li key={cat.id} className="p-4 flex items-start justify-between gap-4 hover:bg-canvas/60">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <FolderIcon className="w-4 h-4 text-accent-text shrink-0" aria-hidden="true" />
-                      <h3 className="text-sm font-bold text-ink">{cat.name}</h3>
-                      <Link to={`/blog/category/${cat.slug}`} target="_blank" rel="noopener" className="text-xs font-mono text-muted hover:text-ink">/blog/category/{cat.slug}</Link>
+              {categories.map((cat) =>
+                editingId === cat.id ? (
+                  <li key={cat.id} className="p-4 bg-canvas/60">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault()
+                        saveEdit(cat)
+                      }}
+                      className="space-y-3"
+                      aria-label={`Edit category ${cat.name}`}
+                    >
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor={`edit-name-${cat.id}`} className="field-label">Name <span aria-hidden="true" className="text-accent-text">*</span></label>
+                          <input id={`edit-name-${cat.id}`} type="text" required maxLength={255} value={draft.name} autoFocus onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} className="field py-2 text-sm" />
+                        </div>
+                        <div>
+                          <label htmlFor={`edit-slug-${cat.id}`} className="field-label">Slug <span aria-hidden="true" className="text-accent-text">*</span></label>
+                          <input id={`edit-slug-${cat.id}`} type="text" required maxLength={80} value={draft.slug} onChange={(e) => setDraft((d) => ({ ...d, slug: e.target.value }))} onBlur={() => setDraft((d) => ({ ...d, slug: slugify(d.slug) }))} className="field py-2 font-mono text-xs" />
+                        </div>
+                      </div>
+                      <div>
+                        <label htmlFor={`edit-desc-${cat.id}`} className="field-label">Description</label>
+                        <textarea id={`edit-desc-${cat.id}`} rows={2} maxLength={500} value={draft.description} onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))} className="field py-2 text-sm" />
+                      </div>
+                      {draft.slug !== cat.slug && (
+                        <p className="text-xs text-warning">Changing the slug changes the public URL; posts in this category are relinked automatically.</p>
+                      )}
+                      <div className="flex gap-2">
+                        <button type="submit" disabled={saving} className="btn-primary btn-sm" aria-busy={saving}>
+                          {saving ? 'Saving…' : 'Save changes'}
+                        </button>
+                        <button type="button" onClick={() => setEditingId(null)} disabled={saving} className="btn-secondary btn-sm">
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </li>
+                ) : (
+                  <li key={cat.id} className="p-4 flex items-start justify-between gap-4 hover:bg-canvas/60">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <FolderIcon className="w-4 h-4 text-accent-text shrink-0" aria-hidden="true" />
+                        <h3 className="text-sm font-bold text-ink">{cat.name}</h3>
+                        <Link to={`/blog/category/${cat.slug}`} target="_blank" rel="noopener" className="text-xs font-mono text-muted hover:text-ink">/blog/category/{cat.slug}</Link>
+                      </div>
+                      <p className="mt-1 text-xs text-muted leading-relaxed">{cat.description || 'No description.'}</p>
                     </div>
-                    <p className="mt-1 text-xs text-muted leading-relaxed">{cat.description || 'No description.'}</p>
-                  </div>
-                  <button type="button" onClick={() => remove(cat)} className="btn-ghost btn-sm text-danger hover:bg-danger-soft shrink-0" aria-label={`Delete category ${cat.name}`}>
-                    <TrashIcon className="w-4 h-4" aria-hidden="true" />
-                  </button>
-                </li>
-              ))}
+                    <div className="flex shrink-0 gap-1">
+                      <button type="button" onClick={() => startEdit(cat)} className="btn-ghost btn-sm" aria-label={`Edit category ${cat.name}`}>
+                        <PencilSquareIcon className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                      <button type="button" onClick={() => remove(cat)} className="btn-ghost btn-sm text-danger hover:bg-danger-soft" aria-label={`Delete category ${cat.name}`}>
+                        <TrashIcon className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </li>
+                )
+              )}
             </ul>
           )}
         </section>
