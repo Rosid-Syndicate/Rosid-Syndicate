@@ -98,31 +98,30 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 pt-6 border-t border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <p className="text-xs text-slate-400" suppressHydrationWarning>&copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
-          <nav aria-label="Legal">
-            <ul className="flex flex-wrap gap-x-6 gap-y-2">
+        {/* Legal bar: copyright · agency credit · legal links on one line from xl; stacks below that. */}
+        <div className="mt-14 pt-6 border-t border-white/10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between xl:gap-8">
+          <p className="text-xs text-slate-400 xl:shrink-0 xl:whitespace-nowrap" suppressHydrationWarning>&copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
+          <p className="text-xs text-slate-400 xl:shrink-0 xl:whitespace-nowrap">
+            Website by{' '}
+            <a
+              href="https://www.tradiedigitalagency.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold whitespace-nowrap text-accent underline-offset-4 transition duration-fast hover:brightness-110 hover:underline rounded-sm"
+            >
+              Tradie Digital Agency<span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </p>
+          <nav aria-label="Legal" className="xl:shrink-0">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 xl:flex-nowrap">
               {legal.map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-xs font-semibold text-slate-400 hover:text-white transition-colors duration-fast">{l.label}</Link>
+                  <Link to={l.to} className="text-xs font-semibold whitespace-nowrap text-slate-400 hover:text-white transition-colors duration-fast">{l.label}</Link>
                 </li>
               ))}
             </ul>
           </nav>
         </div>
-
-        {/* Agency credit: same divider, spacing and type scale as the legal bar above; deliberately quieter than the company's own content. */}
-        <p className="mt-6 pt-5 border-t border-white/10 text-center text-xs text-slate-400">
-          Website by{' '}
-          <a
-            href="https://www.tradiedigitalagency.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold whitespace-nowrap text-accent underline-offset-4 transition duration-fast hover:brightness-110 hover:underline rounded-sm"
-          >
-            Tradie Digital Agency<span className="sr-only"> (opens in a new tab)</span>
-          </a>
-        </p>
       </div>
     </footer>
   )
