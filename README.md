@@ -107,6 +107,6 @@ domain goes live, set `VITE_SITE_URL` to it.
 ## Contact
 
 Rosid Syndicates Group · New Baneshwor, Kathmandu, Nepal · +977-9705398939 ·
-rosid2025@outlook.com
+rosidgroup@outlook.com
 
 © Rosid Syndicates Group. All rights reserved.

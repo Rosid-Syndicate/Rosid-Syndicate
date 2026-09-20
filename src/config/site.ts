@@ -17,7 +17,7 @@ export const DEFAULT_OG_IMAGE = `${SITE_URL}/preview.png`
 export const CONTACT = {
   phone: '+977-9705398939',
   phoneHref: 'tel:+9779705398939',
-  email: 'rosid2025@outlook.com',
+  email: 'rosidgroup@outlook.com',
   addressLocality: 'New Baneshwor, Kathmandu',
   addressCountry: 'NP',
   addressLine: 'New Baneshwor, Kathmandu, Nepal',
