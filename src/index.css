@@ -2,115 +2,169 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Metric-matched local fallbacks so the swap to the web fonts does not shift
+   layout (values follow the Arial→Inter / Arial→Montserrat overrides used by
+   Next.js font optimisation). */
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial');
+  ascent-override: 90.49%;
+  descent-override: 22.56%;
+  line-gap-override: 0%;
+  size-adjust: 107.64%;
+}
+@font-face {
+  font-family: 'Montserrat Fallback';
+  src: local('Arial');
+  ascent-override: 85.79%;
+  descent-override: 22.25%;
+  line-gap-override: 0%;
+  size-adjust: 112.76%;
+}
+
+/* ---------------------------------------------------------------------------
+   Base
+   --------------------------------------------------------------------------- */
 @layer base {
-  html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
-  body { @apply bg-[#F4F4F2] text-[#334155] antialiased; font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
-  h1, h2, h3, h4, h5, h6 { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; @apply text-ink tracking-tight font-bold; }
-  :focus-visible { @apply outline-2 outline-offset-2 outline-fire; }
-  ::selection { @apply bg-fire text-white; }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-canvas text-muted antialiased;
+    font-family: 'Inter', 'Inter Fallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-ink font-bold tracking-tight;
+    text-wrap: balance;
+  }
+  p { text-wrap: pretty; }
+
+  /* Focus: one consistent, high-contrast ring everywhere (WCAG 2.4.7 / 2.4.11) */
+  :focus-visible {
+    outline: 3px solid #FD7B00;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+  .bg-ink :focus-visible, .bg-deep :focus-visible, .dark-surface :focus-visible {
+    outline-color: #FFB067;
+  }
+  ::selection { @apply bg-accent text-ink; }
+
+  /* Default link affordance inside long-form text */
+  .prose-body a { @apply text-accent-text underline underline-offset-2 hover:text-ink; }
 }
 
+/* ---------------------------------------------------------------------------
+   Components
+   --------------------------------------------------------------------------- */
 @layer components {
-  .container { @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12; }
+  .container { @apply max-w-7xl mx-auto px-5 sm:px-8 lg:px-12; }
 
-  /* Pinned diagonal accent */
-  .diagonal {
-    @apply relative;
-  }
-  .diagonal::after {
-    content: '';
-    @apply absolute -bottom-4 left-0 w-24 h-1 bg-fire shadow-[0_0_15px_rgba(255,122,0,0.5)];
-    transform: skewX(-20deg);
+  /* Skip link (first focusable element on the page) */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:px-4 focus:py-2 focus:bg-ink focus:text-white focus:text-sm focus:font-bold focus:rounded-sm focus:shadow-raised;
   }
 
-  /* Section eyebrow */
+  /* Section eyebrow: small caps label above a heading */
   .eyebrow {
-    @apply inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-fire font-display;
+    @apply inline-flex items-center gap-3 text-eyebrow uppercase text-accent-text;
   }
-  .eyebrow::before { content: ''; @apply w-8 h-px bg-fire/40 shadow-[0_0_10px_rgba(255,122,0,0.4)]; }
+  .eyebrow::before { content: ''; @apply w-6 h-px bg-current opacity-60; }
+  .bg-ink .eyebrow, .bg-deep .eyebrow, .eyebrow-on-dark { @apply text-accent; }
 
-  /* Premium glassmorphism card - Light Mode */
-  .premium-glass {
-    @apply bg-white border border-slate-200 hover:border-slate-300 hover:shadow-2xl transition-all duration-300 shadow-xl;
+  /* Buttons — one family, four intents. 44px minimum height (WCAG 2.5.8 target size). */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 rounded-sm text-sm font-bold tracking-wide transition-colors duration-fast select-none;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
+  .btn-primary { @apply btn bg-ink text-white hover:bg-ink-700 active:bg-deep; }
+  .btn-accent  { @apply btn bg-accent text-ink hover:bg-accent-hover; }
+  .btn-secondary { @apply btn bg-surface text-ink border border-line hover:border-ink hover:bg-canvas; }
+  .btn-outline-light { @apply btn bg-transparent text-white border border-white/40 hover:bg-white/10 hover:border-white/70; }
+  .btn-ghost { @apply btn bg-transparent text-ink hover:bg-ink/5; }
+  .btn-sm { @apply min-h-[36px] px-4 py-2 text-xs; }
 
-  /* Mouse-tracking glow card (Dark/Cinematic) */
-  .glow-border-card {
-    position: relative;
-    background: rgba(3, 9, 20, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(20px);
-    transition: background 0.3s, border-color 0.3s;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .glow-border-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background: radial-gradient(
-      250px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
-      rgba(253, 123, 0, 0.15),
-      transparent 80%
-    );
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-  }
-  .glow-border-card:hover::before {
-    opacity: 1;
+  /* Header navigation item (link or disclosure button) */
+  .nav-item {
+    @apply inline-flex items-center gap-1 min-h-[44px] px-3 rounded-sm text-sm font-semibold text-ink hover:text-accent-text transition-colors duration-fast;
   }
 
-  /* Glow Card Border (Dual layer design for actual borders) */
-  .glow-border-outer {
-    position: relative;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 1px;
-    overflow: hidden;
+  /* Text link with arrow, used for "View all →" patterns */
+  .link-arrow {
+    @apply inline-flex items-center gap-1.5 text-sm font-bold text-ink hover:text-accent-text underline-offset-4 hover:underline transition-colors duration-fast;
   }
-  .glow-border-outer::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    z-index: 0;
-    background: radial-gradient(
-      250px circle at var(--mouse-x, 0px) var(--mouse-y, 0px),
-      rgba(253, 123, 0, 0.5),
-      transparent 70%
-    );
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.4s ease;
+
+  /* Cards */
+  .card { @apply bg-surface border border-line rounded-sm shadow-card; }
+  .card-hover { @apply transition-shadow duration-base hover:shadow-raised; }
+
+  /* Fieldset legends render inside the card instead of on its border */
+  fieldset.card > legend { float: left; width: 100%; padding: 0; }
+  fieldset.card > legend + * { clear: both; }
+
+  /* Turnstile container: bounded width so the submit button never wraps */
+  .turnstile-slot { @apply w-full sm:w-auto sm:min-w-[300px] sm:max-w-sm; }
+
+  /* Form controls (public + admin) */
+  .field {
+    @apply w-full bg-canvas border border-line rounded-sm px-4 py-3 text-ink placeholder:text-slate-400 transition-colors duration-fast;
+    @apply focus:outline-none focus:border-ink focus:ring-2 focus:ring-ink/20;
   }
-  .glow-border-outer:hover::before {
-    opacity: 1;
-  }
-  .glow-border-inner {
-    position: relative;
-    z-index: 1;
-    background: #020914;
-    border-radius: 3px;
-    width: 100%;
-    height: 100%;
-  }
+  .field-label { @apply block text-xs font-bold text-muted uppercase tracking-[0.08em] mb-2; }
+
+  /* Dark panel surfaces (hero / footer / group structure) */
+  .panel-dark { @apply bg-white/[0.04] border border-white/10 rounded-sm; }
+
+  /* Long-form article body (blog posts, policies, corporate profile).
+     @tailwindcss/typography is not installed; this is the minimal, brand-aligned
+     equivalent so content is never rendered unstyled. */
+  .prose-body { @apply text-muted text-base sm:text-lg leading-relaxed; }
+  .prose-body > * + * { @apply mt-5; }
+  .prose-body h2 { @apply text-h2 text-ink mt-12 pb-3 border-b border-line; }
+  .prose-body h3 { @apply text-h3 text-ink mt-8; }
+  .prose-body h4 { @apply text-base font-bold text-ink mt-6; }
+  .prose-body ul { @apply list-disc pl-6 space-y-2; }
+  .prose-body ol { @apply list-decimal pl-6 space-y-2; }
+  .prose-body li > p { @apply mt-0; }
+  .prose-body strong { @apply text-ink font-semibold; }
+  .prose-body blockquote { @apply border-l-4 border-accent pl-5 italic text-ink; }
+  .prose-body hr { @apply border-line my-10; }
+  .prose-body pre { @apply bg-deep text-slate-200 p-5 rounded-sm overflow-x-auto text-sm font-mono; }
+  .prose-body code { @apply font-mono text-[0.95em]; }
+  .prose-body img { @apply rounded-sm max-w-full h-auto; }
+  .prose-body figure { @apply my-8; }
+  .prose-body figcaption { @apply mt-2 text-sm text-muted text-center; }
+  .prose-body table { @apply w-full text-sm border-collapse; }
+  .prose-body th, .prose-body td { @apply border border-line px-3 py-2 text-left align-top; }
+  .prose-body th { @apply bg-canvas text-ink font-bold; }
 }
 
+/* ---------------------------------------------------------------------------
+   Utilities
+   --------------------------------------------------------------------------- */
 @layer utilities {
   .text-balance { text-wrap: balance; }
-  .clip-diagonal { clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%); }
-  .cinematic-grid {
-    background-image: radial-gradient(circle at center, rgba(253, 123, 0, 0.05) 1px, transparent 1px);
-    background-size: 32px 32px;
+  .dot-grid {
+    background-image: radial-gradient(circle at center, rgba(253, 123, 0, 0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 }
 
+/* Reduced motion: respected globally. Components with JS-driven motion also
+   check `usePrefersReducedMotion()` before starting animation loops. */
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
 }
 
+@media print {
+  .no-print, header, footer, .skip-link { display: none !important; }
+}

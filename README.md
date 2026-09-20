@@ -1,266 +1,110 @@
+# Rosid Syndicates Group — corporate website
 
-# 🏢 Rosid Syndicates Group - Corporate Website
+Corporate website for **Rosid Syndicates Group**, a Kathmandu-based group of
+five companies working across construction supply, public procurement,
+financial advisory and cross-border trade in Nepal.
 
-![Website Status](https://img.shields.io/badge/status-live-success)
-![React](https://img.shields.io/badge/React-18-61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-06B6D4)
-![Supabase](https://img.shields.io/badge/Supabase-latest-3ECF8E)
-![Vercel](https://img.shields.io/badge/Vercel-deployed-black)
+Production: https://www.rosiddai.com (Vercel alias: https://rosid-sydnicate-company.vercel.app)
 
+## Stack
 
-## 📖 Overview
+| Layer | Technology |
+|---|---|
+| UI | React 18 · TypeScript · Vite 6 · Tailwind CSS 3 · React Router 7 (`BrowserRouter`) |
+| Data & auth | Supabase (Postgres + Row Level Security, Auth, Storage); staff roles `admin` / `editor` |
+| Serverless | Vercel Node functions in `api/` (`/api/contact`, `/api/tender`, `/api/sitemap`) |
+| Anti-abuse | Cloudflare Turnstile, honeypot, per-endpoint rate limits (optional Upstash Redis), duplicate suppression |
+| Email | Resend |
+| Editor | TipTap 3 (MIT) storing Markdown; images uploaded to the `site-media` bucket |
+| Analytics | GA4 (only when `VITE_GA_MEASUREMENT_ID` is set) |
 
-**Rosid Syndicates Group** is a multi-disciplinary conglomerate based in Nepal, operating across:
+The home route is pre-rendered to static HTML at build time and hydrated; all
+other routes are client-rendered and code-split.
 
-- 🏗️ **Construction & Civil Infrastructure**
-- 📋 **Procurement & Tender Execution**
-- 💰 **Financial Advisory**
-- 📦 **Logistics & Supply Chain**
-- 🤝 **Public-Private Partnerships**
-- 🌍 **International Trade**
-
-This repository contains the complete source code for the **official corporate website**, built as a modern, full-stack web application.
-
-
-## 🌐 Live Demo
-
-🔗 **Website:** [https://rosid.com.np](https://rosid.com.np)
-
-
-## 🏗️ Subsidiary Companies
-
-The group operates through **5 specialized subsidiaries**:
-
-| # | Company | Core Focus |
-|---|---------|------------|
-| 1 | **Roshan Enterprises Pvt. Ltd.** | Construction Supply, Procurement, Retail & Hospitality |
-| 2 | **Appi Saipal Financial Solutions Pvt. Ltd.** | Infrastructure Advisory, Bank Guarantees, Financial Closure |
-| 3 | **Kasthamandap Commerce and Company Pvt. Ltd.** | Nationwide Trading, Supply Tenders |
-| 4 | **B & C Exim Company Pvt. Ltd.** | Import/Export, Distribution Logistics |
-| 5 | **Deiyougo Enterprises Pvt. Ltd.** | Government Procurement, Commercial Sourcing |
-
----
-
-## 🛠️ Technology Stack
-
-### Frontend
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| React | 18.x | UI Framework |
-| TypeScript | 5.x | Type Safety |
-| Tailwind CSS | 3.x | Styling |
-| Framer Motion | Latest | Animations |
-| React Router | v7 | Routing |
-| Headless UI | Latest | Accessible Components |
-| Heroicons | Latest | Icons |
-
-### Backend & Database
-
-| Technology | Purpose |
-|------------|---------|
-| Supabase | PostgreSQL Database, Authentication, Storage |
-| PostgreSQL | Primary Database |
-| Row Level Security (RLS) | Database Security |
-
-### Hosting & Deployment
-
-| Service | Purpose |
-|---------|---------|
-| Vercel | Hosting & Deployment |
-| Vercel Serverless Functions | API Endpoints |
-
-### Security
-
-| Service | Purpose |
-|---------|---------|
-| Cloudflare Turnstile | Bot Protection |
-| Resend | Email Delivery |
-
----
-
-## ✨ Key Features
-
-### Public Website
-
-- ✅ Glassmorphic Navigation Bar - Floating, frosted glass effect
-- ✅ Dynamic Hero Canvas - Interactive particle network
-- ✅ Mouse-Tracking Spotlight Cards - Cursor-reactive gradients
-- ✅ Animated Statistics - Count-up animations on scroll
-- ✅ Visual Group Structure - Dark-themed hierarchy tree
-- ✅ 6 Subsidiary Pages - Complete company details
-- ✅ Appi Saipal Dark Theme - Premium energy sector branding
-- ✅ Blog System - Full-featured corporate blog
-- ✅ Contact Forms - With bot protection
-- ✅ Tender Inquiry Forms - For procurement submissions
-- ✅ Mobile Responsive - Works on all devices
-- ✅ SEO Optimized - Meta tags, sitemaps
-
-### Admin Dashboard
-
-- ✅ Secure Authentication - Supabase Auth
-- ✅ Dashboard Overview - Real-time statistics
-- ✅ Inquiry Management - View, filter, respond
-- ✅ Subsidiary Management - CRUD operations
-- ✅ Content Management - Update company info
-- ✅ Blog Management - Create, edit, publish posts
-- ✅ Category Management - Manage blog categories
-
----
-
-## 📁 Project Structure
+## Repository layout
 
 ```
-rosid-group-website/
-├── public/
-│   └── images/               # Static assets
-├── src/
-│   ├── components/           # Reusable UI components
-│   │   ├── common/           # Navbar, Footer, etc.
-│   │   ├── ui/               # shadcn/ui components
-│   │   └── admin/            # Admin layout components
-│   ├── pages/                # Page components
-│   │   ├── admin/            # Admin dashboard pages
-│   │   └── blog/             # Blog pages
-│   ├── data/                 # Static data
-│   ├── lib/                  # Utilities & configurations
-│   ├── contexts/             # React contexts
-│   ├── types/                # TypeScript interfaces
-│   ├── App.tsx               # Main routing
-│   └── main.tsx              # Entry point
-├── api/                      # Vercel serverless functions
-├── supabase/
-│   └── migrations/           # SQL migrations
-├── .env.example              # Environment variables template
-├── tailwind.config.js        # Tailwind configuration
-├── vite.config.ts            # Vite configuration
-├── package.json              # Dependencies
-└── README.md                 # This file
+api/                    Vercel serverless functions
+  _lib/                 shared pipeline: validation, rate limits, Turnstile, email, dedupe, routes manifest
+public/                 static assets (brand/ and img/ are generated by `npm run images`), 404.html, robots.txt (generated)
+scripts/                build-time tooling: prerender, robots, route/manifest check, image optimisation, local Vercel emulator
+src/
+  components/           layout + section components (Navbar, Footer, Hero, Seo, PageHeader …)
+  config/site.ts        site identity: canonical origin, name, contact details
+  data/                 companies, services, sectors, FAQs, bundled blog fallback
+  hooks/, lib/          images, markdown renderer, leads client, JSON-LD helpers
+  pages/                route components; pages/admin for the CMS (dashboard, inquiries, blog editor, testimonials, FAQs, users & roles)
+supabase/migrations/    SQL migrations (apply in the Supabase SQL editor)
+tests/                  node:test suites for the API pipeline
+DESIGN.md               design system — source of truth for UI work
+WEBSITE_AUDIT.md        audit findings, measurements, action plan
+SECURITY_AUDIT.md       threat model, vulnerabilities, status
+SECURITY_HARDENING.md   implemented controls, rate-limit matrix, operating requirements
+API_SECURITY_MATRIX.md  endpoint and data-access inventory
 ```
 
----
+## Getting started
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18.x or higher
-- npm 9.x or higher
-- Git
-
-### Installation
-
-**1. Clone the repository**
-
-```bash
-git clone https://github.com/rosid-group/rosid-group-website.git
-cd rosid-group-website
-```
-
-**2. Install dependencies**
+Requirements: Node 20+ and npm.
 
 ```bash
 npm install
+cp .env.example .env.local     # fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+npm run dev                    # Vite dev server (API functions are not available here)
 ```
 
-**3. Set up environment variables**
+To exercise the API and the exact Vercel routing/header rules locally:
 
 ```bash
-cp .env.example .env.local
+npm run build                  # typecheck → vite build → prerender home
+npm run serve                  # http://localhost:4173 with vercel.json rules and api/ mounted (INQUIRY_DRY_RUN=1: no writes, no email)
 ```
 
-Add your Supabase credentials to `.env.local`:
+Or use `vercel dev` with the Vercel CLI.
 
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-VITE_SITE_URL=https://rosid.com.np
-```
+## Scripts
 
-**4. Start development server**
+| Script | What it does |
+|---|---|
+| `npm run dev` | Vite dev server |
+| `npm run build` | `tsc -b` → robots.txt + route check (`prebuild`) → `vite build` → prerender `/` |
+| `npm run check` | `lint` + `typecheck` + `check:seo` + `test` |
+| `npm test` | API pipeline tests (`node --test`) |
+| `npm run check:seo` | fails if React routes, `vercel.json` rewrites, the sitemap manifest and data slugs drift, or if hash links / 4K images / `dangerouslySetInnerHTML` reappear |
+| `npm run check:images` | verifies every stock photo referenced in `src/` still exists upstream (needs network; run before releases) |
+| `npm run images` | regenerate optimised brand and photo assets into `public/brand` and `public/img` |
+| `npm run serve` | local Vercel emulator for the built site |
 
-```bash
-npm run dev
-```
+## Environment variables
 
-**5. Build for production**
+See `.env.example`. Public values are `VITE_`-prefixed and bundled; server
+secrets (`TURNSTILE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
+`UPSTASH_*`) are read only by the functions in `api/`. The production build
+fails fast if the public Supabase variables are missing. `VITE_AUTH_GOOGLE_SIGNIN=true`
+shows "Continue with Google" on the admin login once the provider is enabled in Supabase.
 
-```bash
-npm run build
-```
+## Database
 
----
+Apply the migrations in `supabase/migrations/` in order through the Supabase SQL
+editor. `20260919_admin_authorization.sql` introduces the admin allow-list and
+admin-only policies; `20260919_admin_roles_content.sql` adds staff roles
+(`admin` / `editor`), the testimonials and FAQs tables and the `site-media`
+upload bucket. Review `public.admin_users` after applying them and disable
+public sign-ups in Authentication settings. Add colleagues from Admin → Users &
+roles, then create their login in Supabase Authentication → Users. `20260919_inquiries_api_only.sql` is
+optional and should be applied only after `SUPABASE_SERVICE_ROLE_KEY` is set in
+Vercel.
 
-## 🗄️ Database Setup
+## Deployment
 
-### Supabase Migration
+Vercel builds from `package.json` (`npm run build`) and applies `vercel.json`
+(security headers and CSP, redirects, per-route rewrites, caching, real 404s).
+Set the environment variables above for Production and Preview. When a custom
+domain goes live, set `VITE_SITE_URL` to it.
 
-Run the following SQL in your Supabase SQL Editor to set up the database schema:
+## Contact
 
-```sql
--- See supabase/migrations/20260825_blog_system.sql
-```
+Rosid Syndicates Group · New Baneshwor, Kathmandu, Nepal · +977-9705398939 ·
+rosid2025@outlook.com
 
-The migration creates:
-
-- `subsidiaries` - Company information
-- `inquiries` - Contact/tender submissions
-- `blog_posts` - Blog articles
-- `blog_categories` - Blog categories
-- `company_settings` - Dynamic settings
-
----
-
-## 🔒 Security
-
-| Feature | Implementation |
-|---------|---------------|
-| Authentication | Supabase Auth + JWT |
-| Database Security | Row Level Security (RLS) |
-| Bot Protection | Cloudflare Turnstile |
-| Form Validation | Server + Client validation |
-| Data Encryption | SSL/TLS in transit |
-| Password Hashing | bcrypt |
-
----
-
-## 📄 License
-
-All rights reserved. © 2026 Rosid Syndicates Group.
-
----
-
-## 📞 Contact
-
-| Detail | Information |
-|--------|-------------|
-| Company | Rosid Syndicates Group |
-| Address | New Baneshwor, Kathmandu, Nepal |
-| Phone | +977-9705398939 |
-| Email | rosid2025@outlook.com |
-| Website | rosid.com.np |
-
----
-
-## 🙏 Acknowledgments
-
-- Vercel - Hosting Platform
-- Supabase - Backend Infrastructure
-- Tailwind CSS - Styling Framework
-- React - UI Framework
-
----
-
-## 🎯 Project Status
-
-| Phase | Status |
-|-------|--------|
-| Development | ✅ Complete |
-| Testing | ✅ Complete |
-| Deployment | ✅ Complete |
-| Handover | ✅ Ready |
-
-
-# Built with ❤️ for Rosid Syndicates Group
+© Rosid Syndicates Group. All rights reserved.

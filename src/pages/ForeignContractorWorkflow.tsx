@@ -1,235 +1,131 @@
-import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { CheckIcon } from '@heroicons/react/20/solid'
 import PageHeader from '../components/PageHeader'
+import Seo from '../components/Seo'
+
+const pillars = [
+  {
+    n: '01',
+    tag: 'Financial',
+    title: 'Counter-guarantees & bank alignment',
+    intro: 'Through Appi Saipal Financial Solutions we interface with Class "A" commercial banks and Nepal Rastra Bank for the guarantee structures a bid requires:',
+    items: ['Bid bonds', 'Performance bonds', 'Advance-payment counter-guarantees', 'Bank alignment and financial closure'],
+  },
+  {
+    n: '02',
+    tag: 'Regulatory',
+    title: 'Compliant local representation',
+    intro: 'We navigate the compliance required to secure and execute public tenders:',
+    items: ['Local representation and JV structuring', 'Public Procurement Regulations alignment', 'Government advocacy and policy support', 'Local partner preference management'],
+  },
+  {
+    n: '03',
+    tag: 'Logistics',
+    title: 'On-the-ground logistics & material supply',
+    intro: 'Roshan Enterprises and the commerce division handle physical execution:',
+    items: ['Bulk domestic raw-material sourcing', 'Local labour network management', 'Site management support', 'Integrated construction execution'],
+  },
+]
 
 export default function ForeignContractorWorkflow() {
-  useEffect(() => {
-    window.scrollTo(0, 0)
-    document.title = 'Infrastructure Tender Services | Rosid Syndicates Group'
-    const metaDesc = document.querySelector('meta[name="description"]')
-    if (metaDesc) {
-      metaDesc.setAttribute('content', 'In-country operational, financial, and strategic partner for foreign contractors entering Nepal\'s infrastructure market.')
-    }
-  }, [])
-
   return (
-    <div className="bg-transparent">
-      <PageHeader 
-        title="Unlocking High-Value Bidding & Local Execution" 
-        subtitle="Foreign Contractor Workflow" 
-        image="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=100&w=3840&auto=format&fit=crop"
+    <div className="bg-canvas">
+      <Seo
+        title="Foreign Contractor Support in Nepal"
+        description="How Rosid Syndicates Group supports foreign contractors bidding on infrastructure tenders in Nepal: counter-guarantees and bank alignment, Public Procurement Act compliance and local representation, and material supply with site logistics."
+        path="/infrastructure-tender-services"
+        breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Foreign Contractor Support', path: '/infrastructure-tender-services' }]}
+      />
+      <PageHeader
+        title="Bidding and executing in Nepal as a foreign contractor."
+        subtitle="Foreign contractor workflow"
+        lead="One in-country counterpart for guarantees, compliance and site execution — so your team can focus on engineering and pricing."
+        image="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158"
       />
 
-      {/* 2. THE CHALLENGE */}
-      <section className="py-24 bg-[#F4F4F2] border-b border-slate-200">
-        <div className="container max-w-4xl text-center">
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-sm font-bold text-ink/40 uppercase tracking-[0.15em] mb-4">
-            The Challenge
-          </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-4xl font-bold text-ink leading-tight">
-            Navigating Complexities in a Growing Market
-          </motion.h2>
-          <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="mt-8 text-lg text-slate-500 leading-relaxed">
-            <p>
-              Foreign firms entering Nepal's infrastructure sector face unique complexities involving the Public Procurement Act (PPA), local bank guarantee compliance, stringent regulatory navigation, local representation requirements, and intricate on-the-ground execution logistics.
-            </p>
-          </motion.div>
+      {/* Challenge */}
+      <section className="py-16 lg:py-24 border-b border-line" aria-labelledby="challenge-heading">
+        <div className="container max-w-3xl">
+          <p className="eyebrow">The challenge</p>
+          <h2 id="challenge-heading" className="mt-5 text-h2">A growing market with specific entry requirements.</h2>
+          <p className="mt-6 text-lead text-muted">
+            Foreign firms entering Nepal's infrastructure sector face Public Procurement Act (PPA) requirements, local bank-guarantee compliance, regulatory navigation, local representation rules and on-the-ground execution logistics.
+          </p>
         </div>
       </section>
 
-      {/* 3. ROSID'S ROLE VISUAL */}
-      <section className="py-32 bg-transparent">
-        <div className="container">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-ink text-center mb-16">Rosid's Role as Your In-Country Execution Engine</h2>
-            
-            <div className="flex flex-col items-center">
-              <div className="bg-white text-ink px-8 py-4 font-bold tracking-widest text-lg w-full max-w-sm text-center shadow-lg">
-                FOREIGN CONTRACTOR / BIDDER
-              </div>
-              <div className="w-px h-12 bg-fire my-2"></div>
-              <div className="w-4 h-4 border-b-2 border-r-2 border-fire transform rotate-45 mb-4"></div>
-              
-              <div className="bg-fire text-ink px-8 py-4 font-bold tracking-widest text-lg w-full max-w-md text-center shadow-lg">
-                ROSID SYNDICATES GROUP
-                <div className="text-xs text-ink/80 mt-1 uppercase">In-Country Execution Engine</div>
-              </div>
-              <div className="w-px h-12 bg-fire my-2"></div>
-              <div className="w-4 h-4 border-b-2 border-r-2 border-fire transform rotate-45 mb-4"></div>
-              
-              <div className="w-full max-w-5xl border-t-2 border-slate-200 relative mt-4">
-                <div className="absolute top-0 left-1/6 w-px h-8 bg-white/10"></div>
-                <div className="absolute top-0 left-1/2 w-px h-8 bg-white/10"></div>
-                <div className="absolute top-0 right-1/6 w-px h-8 bg-white/10"></div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
-                  <div className="bg-[#F4F4F2] p-6 border border-slate-200 text-center">
-                    <h3 className="font-bold text-ink uppercase tracking-widest">Financial<br/>& Guarantees</h3>
-                  </div>
-                  <div className="bg-[#F4F4F2] p-6 border border-slate-200 text-center">
-                    <h3 className="font-bold text-ink uppercase tracking-widest">Regulatory<br/>& Advocacy</h3>
-                  </div>
-                  <div className="bg-[#F4F4F2] p-6 border border-slate-200 text-center">
-                    <h3 className="font-bold text-ink uppercase tracking-widest">Civil & Supply<br/>Logistics</h3>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* 4. FINANCIAL & GUARANTEES | 5. REGULATORY & ADVOCACY | 6. CIVIL & SUPPLY */}
-      <section className="py-24 bg-white text-ink border-t border-slate-100">
-        <div className="container">
-          <div className="grid lg:grid-cols-3 gap-12">
-            
-            {/* FINANCIAL & GUARANTEES */}
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-white border border-slate-200 shadow-sm border border-slate-200 p-10 hover:bg-[#F4F4F2] border border-slate-200 transition-colors">
-              <span className="text-fire font-bold text-sm uppercase tracking-widest mb-4 block">01 / Financial</span>
-              <h3 className="text-2xl font-bold text-ink mb-6 pb-6 border-b border-slate-200">Counter Guarantee & Bank Alignment</h3>
-              <p className="text-ink/70 leading-relaxed mb-6">
-                Through Appi Saipal Financial Solutions, we interface with Class "A" commercial banks and the Central Bank (NRB) for critical guarantee structures:
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-fire font-bold mt-0.5">&#10003;</span> Bid Bonds
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-fire font-bold mt-0.5">&#10003;</span> Performance Bonds
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-fire font-bold mt-0.5">&#10003;</span> Advance Payment Counter-Guarantees
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-fire font-bold mt-0.5">&#10003;</span> Bank Alignment & Financial Closure
-                </li>
-              </ul>
-            </motion.div>
-
-            {/* REGULATORY & ADVOCACY */}
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="bg-white border border-slate-200 shadow-sm border border-slate-200 p-10 hover:bg-[#F4F4F2] border border-slate-200 transition-colors">
-              <span className="text-ocean font-bold text-sm uppercase tracking-widest mb-4 block">02 / Regulatory</span>
-              <h3 className="text-2xl font-bold text-ink mb-6 pb-6 border-b border-slate-200">Compliant Local Agent Representation</h3>
-              <p className="text-ink/70 leading-relaxed mb-6">
-                We navigate the stringent compliance required to secure and execute public tenders:
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-ocean font-bold mt-0.5">&#10003;</span> Local Representation & JV Structuring
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-ocean font-bold mt-0.5">&#10003;</span> Public Procurement Regulations Alignment
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-ocean font-bold mt-0.5">&#10003;</span> Government Advocacy & Policy Support
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-ocean font-bold mt-0.5">&#10003;</span> Local Partner Preferences Management
-                </li>
-              </ul>
-            </motion.div>
-
-            {/* CIVIL & SUPPLY LOGISTICS */}
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="bg-white border border-slate-200 shadow-sm border border-slate-200 p-10 hover:bg-[#F4F4F2] border border-slate-200 transition-colors">
-              <span className="text-electric font-bold text-sm uppercase tracking-widest mb-4 block">03 / Logistics</span>
-              <h3 className="text-2xl font-bold text-ink mb-6 pb-6 border-b border-slate-200">On-the-Ground Logistics & Material Supply</h3>
-              <p className="text-ink/70 leading-relaxed mb-6">
-                Leveraging Roshan Enterprises for physical execution:
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-electric font-bold mt-0.5">&#10003;</span> Bulk Domestic Raw Materials Sourcing
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-electric font-bold mt-0.5">&#10003;</span> Local Labor Network Management
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-electric font-bold mt-0.5">&#10003;</span> Site Management Support
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink/80">
-                  <span className="text-electric font-bold mt-0.5">&#10003;</span> Integrated Construction Execution
-                </li>
-              </ul>
-            </motion.div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* 7. THREE-PILLAR WORKFLOW SUMMARY */}
-      <section className="py-24 bg-[#F4F4F2]">
-        <div className="container max-w-5xl">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl font-bold text-ink text-center mb-16">The Three-Pillar Workflow</motion.h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-transparent p-8 border border-slate-200 shadow-sm text-center">
-              <div className="w-16 h-16 bg-fire-50 text-fire rounded-full flex items-center justify-center mx-auto mb-6 font-bold text-xl">01</div>
-              <h3 className="font-bold text-ink text-lg mb-4">Financial & Guarantees</h3>
-              <ul className="text-sm text-slate-500 space-y-2">
-                <li>Counter Guarantee Setup</li>
-                <li>Local Bank Syndication</li>
-                <li>Financial Closure</li>
-              </ul>
-            </motion.div>
-            
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="bg-transparent p-8 border border-slate-200 shadow-sm text-center">
-              <div className="w-16 h-16 bg-ocean-50 text-ocean rounded-full flex items-center justify-center mx-auto mb-6 font-bold text-xl">02</div>
-              <h3 className="font-bold text-ink text-lg mb-4">Regulatory & Advocacy</h3>
-              <ul className="text-sm text-slate-500 space-y-2">
-                <li>Local Agent Alignment</li>
-                <li>PPA / PPMP Compliance</li>
-                <li>Government Advocacy</li>
-              </ul>
-            </motion.div>
-            
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="bg-transparent p-8 border border-slate-200 shadow-sm text-center">
-              <div className="w-16 h-16 bg-electric-50 text-electric rounded-full flex items-center justify-center mx-auto mb-6 font-bold text-xl">03</div>
-              <h3 className="font-bold text-ink text-lg mb-4">Civil & Supply Logistics</h3>
-              <ul className="text-sm text-slate-500 space-y-2">
-                <li>Bulk Material Sourcing</li>
-                <li>Equipment Logistics</li>
-                <li>JV Site Execution</li>
-              </ul>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* 8. WHY ROSID */}
-      <section className="py-24 bg-transparent border-t border-slate-200">
-        <div className="container max-w-4xl text-center">
-          <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-sm font-bold text-ink/40 uppercase tracking-[0.15em] mb-4">
-            Why Partner With Us
-          </motion.p>
-          <motion.h2 initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-3xl md:text-4xl font-bold text-ink leading-tight">
-            Bridging Global Expertise and Nepalese Execution
-          </motion.h2>
-          <motion.p initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="mt-8 text-lg text-slate-500 leading-relaxed max-w-3xl mx-auto">
-            The advantage of partnering with Rosid Syndicates Group lies in our unified ecosystem. By combining financial advisory, construction execution, material supply, logistics, and strict regulatory navigation into a single entity, we remove the friction of operating in a new jurisdiction, allowing you to focus on high-value engineering and bidding.
-          </motion.p>
-        </div>
-      </section>
-
-      {/* 9. CALL TO ACTION */}
-      <section className="py-32 bg-white text-ink text-center border-t-4 border-fire">
+      {/* Role diagram */}
+      <section className="py-16 lg:py-24" aria-labelledby="role-heading">
         <div className="container max-w-4xl">
-          <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-4xl md:text-5xl font-bold leading-tight">
-            Ready to Bid on Mega Projects in Nepal?
-          </motion.h2>
-          <motion.p initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="mt-8 text-xl text-ink/70">
-            Bridge the gap between opportunity and execution.
-          </motion.p>
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/#contact" className="inline-flex justify-center items-center gap-2 px-8 py-4 bg-fire text-ink font-bold text-sm hover:bg-fire-600 transition-colors uppercase tracking-widest">
-              Discuss JV Partnership <ArrowRightIcon className="w-4 h-4" />
+          <h2 id="role-heading" className="text-h2 text-center">Rosid's role as your in-country execution engine</h2>
+          <ol className="mt-12 flex flex-col items-center" aria-label="Relationship between bidder, Rosid and the three pillars">
+            <li className="w-full max-w-sm card px-6 py-4 text-center font-bold tracking-wide text-ink">Foreign contractor / bidder</li>
+            <li aria-hidden="true" className="w-px h-10 bg-accent" />
+            <li className="w-full max-w-md bg-accent text-ink px-6 py-4 rounded-sm text-center shadow-card">
+              <span className="block font-bold tracking-wide">Rosid Syndicates Group</span>
+              <span className="block text-xs font-semibold uppercase tracking-[0.1em] mt-1 text-ink/80">In-country execution engine</span>
+            </li>
+            <li aria-hidden="true" className="w-px h-10 bg-accent" />
+            <li className="w-full">
+              <ul className="grid sm:grid-cols-3 gap-4 border-t-2 border-line pt-6">
+                {pillars.map((p) => (
+                  <li key={p.n} className="card p-5 text-center">
+                    <span className="block font-mono text-xs text-accent-text">{p.n}</span>
+                    <span className="block mt-1 font-bold text-ink text-sm uppercase tracking-wide">{p.title.split(' & ')[0]}</span>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      {/* Pillars */}
+      <section className="py-16 lg:py-24 bg-surface border-y border-line" aria-labelledby="pillars-heading">
+        <div className="container">
+          <h2 id="pillars-heading" className="sr-only">The three pillars in detail</h2>
+          <div className="grid lg:grid-cols-3 gap-6">
+            {pillars.map((p) => (
+              <section key={p.n} className="card p-8" aria-labelledby={`pillar-${p.n}`}>
+                <span className="text-xs font-bold uppercase tracking-[0.12em] text-accent-text">{p.n} / {p.tag}</span>
+                <h3 id={`pillar-${p.n}`} className="mt-3 text-h3 pb-5 border-b border-line">{p.title}</h3>
+                <p className="mt-5 text-sm text-muted leading-relaxed">{p.intro}</p>
+                <ul className="mt-4 space-y-2.5">
+                  {p.items.map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-sm text-ink">
+                      <CheckIcon className="w-4 h-4 mt-0.5 text-accent-text shrink-0" aria-hidden="true" /> {item}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why */}
+      <section className="py-16 lg:py-24" aria-labelledby="why-partner">
+        <div className="container max-w-3xl">
+          <p className="eyebrow">Why partner with us</p>
+          <h2 id="why-partner" className="mt-5 text-h2">Bridging global expertise and Nepalese execution.</h2>
+          <p className="mt-6 text-lead text-muted">
+            The advantage lies in one ecosystem: financial advisory, material supply, logistics and regulatory navigation from a single group, which removes the friction of operating in a new jurisdiction and lets you concentrate on high-value engineering and bidding.
+          </p>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16 lg:py-24 bg-ink text-white" aria-labelledby="fc-cta">
+        <div className="container max-w-4xl text-center">
+          <h2 id="fc-cta" className="text-h2 text-white">Preparing a bid in Nepal?</h2>
+          <p className="mt-5 text-lead text-slate-300">Share the tender reference and required support. We respond with the relevant division within two working days.</p>
+          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-3">
+            <Link to="/tender-inquiry" className="btn-accent">
+              Submit a tender inquiry <ArrowRightIcon className="w-4 h-4" aria-hidden="true" />
             </Link>
-            <Link to="/#contact" className="inline-flex justify-center items-center gap-2 px-8 py-4 border border-white/20 text-ink font-bold text-sm hover:bg-[#F4F4F2] border border-slate-200 transition-colors uppercase tracking-widest">
-              Discuss Financial Closure
-            </Link>
-          </motion.div>
+            <Link to="/#contact" className="btn-outline-light">Discuss a JV partnership</Link>
+          </div>
         </div>
       </section>
     </div>

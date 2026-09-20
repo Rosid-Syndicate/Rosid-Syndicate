@@ -1,98 +1,54 @@
-# Contributing to Artagan
+# Contributing
 
-First off, thank you for considering contributing to Artagan! It's people like you that make Artagan such a great tool.
+Thank you for helping maintain the Rosid Syndicates Group website. This is a
+private corporate codebase; contributions come from the internal team and
+approved partners.
 
-## Code of Conduct
+## Before you start
 
-This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code.
+1. Read `DESIGN.md` (design system and UI rules) and skim `SECURITY_HARDENING.md`
+   (what the API and database enforce).
+2. Install Node 20+ and run `npm install`.
+3. Copy `.env.example` to `.env.local` and fill in the public Supabase values.
 
-## How Can I Contribute?
+## Workflow
 
-### Reporting Bugs
+1. Branch from `main` (`feature/<topic>` or `fix/<topic>`). Never commit directly to `main`.
+2. Make focused changes. Preserve API contracts, RLS semantics and data shapes unless the change is the point.
+3. Run the gate before pushing:
 
-Before creating bug reports, please check the issue list as you might find out that you don't need to create one. When you are creating a bug report, please include as many details as possible:
+   ```bash
+   npm run check     # lint + typecheck + route/manifest drift check + API tests
+   npm run build     # typecheck, build, prerender
+   npm run serve     # optional: QA the built site with Vercel rules at http://localhost:4173
+   ```
 
-* Use a clear and descriptive title
-* Describe the exact steps which reproduce the problem
-* Provide specific examples to demonstrate the steps
-* Describe the behavior you observed after following the steps
-* Explain which behavior you expected to see instead and why
-* Include screenshots if possible
+4. Open a pull request using the template. Describe the user-visible change,
+   how you tested it (desktop and mobile), and any manual configuration needed.
 
-### Suggesting Enhancements
+## Rules that the tooling enforces
 
-If you have a suggestion for the project, we'd love to hear it! Enhancement suggestions are tracked as GitHub issues. When creating an enhancement suggestion, please include:
+- Every React route must have a `vercel.json` rewrite and, if public, an entry in
+  `api/_lib/routes.js`; company/service slugs must match `src/data`.
+- No hash-router links (`/#/…`), no `w=3840` image URLs, no `dangerouslySetInnerHTML`.
+- ESLint and TypeScript must pass with zero errors.
 
-* A clear and descriptive title
-* A detailed description of the proposed enhancement
-* An explanation of why this enhancement would be useful
-* Examples of how the enhancement would be used
+## Rules that reviewers enforce
 
-### Pull Requests
+- New UI uses the semantic tokens and component classes from `DESIGN.md`.
+- Every page renders exactly one `<Seo>`; one `<h1>` per page.
+- Forms submit through `/api/*` — the browser never writes to `inquiries` directly.
+- Server secrets live only in `api/` and are never `VITE_`-prefixed.
+- Content must be verifiable: no invented statistics, certifications, projects or testimonials.
+- Database changes ship as a new file in `supabase/migrations/` with rollback notes; never edit applied migrations.
 
-* Fill in the required template
-* Do not include issue numbers in the PR title
-* Include screenshots and animated GIFs in your pull request whenever possible
-* Follow the JavaScript/TypeScript and React styleguides
-* Include thoughtfully-worded, well-structured tests
-* Document new code
-* End all files with a newline
+## Commit messages
 
-## Styleguides
+Present tense, imperative, ≤ 72 characters on the first line, with a body that
+explains *why*. Use a scope prefix where helpful: `feat(web):`, `fix(api):`,
+`security(db):`, `docs:`, `infra:`.
 
-### Git Commit Messages
+## Reporting a security issue
 
-* Use the present tense ("Add feature" not "Added feature")
-* Use the imperative mood ("Move cursor to..." not "Moves cursor to...")
-* Limit the first line to 72 characters or less
-* Reference issues and pull requests liberally after the first line
-
-### JavaScript/TypeScript Styleguide
-
-* Use TypeScript for all new code
-* Use const for all declarations where possible
-* Prefer template literals over string concatenation
-* Use meaningful variable names
-
-### React Styleguide
-
-* Use functional components with hooks
-* Use TypeScript interfaces for props
-* Keep components small and focused
-* Use meaningful component names
-* Document complex component logic with comments
-
-## Setting Up Your Development Environment
-
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/artagan.git`
-3. Install dependencies: `npm install`
-4. Create a branch for your changes: `git checkout -b feature/your-feature-name`
-5. Make your changes
-6. Run tests: `npm test`
-7. Push to your fork and submit a pull request
-
-## Project Structure
-
-```
-artagan/
-├── src/
-│   ├── components/    # React components
-│   ├── assets/       # Static assets
-│   ├── App.tsx       # Main App component
-│   └── index.css     # Global styles
-├── public/           # Public assets
-└── index.html       # HTML template
-```
-
-## Support
-
-If you have any questions or need help with a contribution, feel free to:
-
-* Open an issue
-* Contact the maintainer: [@ardakaanozcan_](https://twitter.com/ardakaanozcan_)
-* Join our community discussions on GitHub
-
-## Attribution
-
-This Contributing Guide is adapted from the [Atom Contributing Guide](https://github.com/atom/atom/blob/master/CONTRIBUTING.md). 
+Do not open a public issue. Email the group's IT contact (see README) with the
+details and, if possible, steps to reproduce.

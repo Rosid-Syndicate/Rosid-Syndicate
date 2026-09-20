@@ -1,95 +1,93 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
+import { supabase } from '../../lib/supabase'
 
+const FIELDS: { key: string; label: string; help: string }[] = [
+  { key: 'mission', label: 'Corporate mission', help: 'One or two sentences.' },
+  { key: 'vision', label: 'Corporate vision', help: 'One or two sentences.' },
+  { key: 'core_values', label: 'Core values', help: 'Comma-separated list.' },
+]
+
+/**
+ * Site content editor.
+ *
+ * Uses upsert on `section_key`: the previous version ran UPDATE on rows the
+ * migration never seeded, so "Publish content" affected zero rows while showing
+ * a success toast. Each save now reports the real outcome.
+ */
 export default function Content() {
-  const [content, setContent] = useState<Record<string, string>>({
-    mission: "To accelerate Nepal's industrial transformation by integrating sovereign financial engineering, tier-one infrastructure construction, and resilient international supply chains under one trusted group structure.",
-    vision: "To be the preeminent corporate conglomerate and partner of choice for foreign EPC contractors, sovereign institutions, and multilateral investors driving South Asia's sustainable development.",
-    core_values: "Institutional Integrity, Engineering Precision, Financial Reliability, and Sovereign Stewardship."
-  })
-  const [loading, setLoading] = useState(true)
+  const [content, setContent] = useState<Record<string, string>>({})
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [saving, setSaving] = useState(false)
 
-  const load = async () => {
-    try {
-      const { data, error } = await supabase.from('site_content').select('*')
-      if (!error && data && data.length > 0) {
-        const map: Record<string, string> = {}
-        data.forEach(d => map[d.section_key] = d.content)
-        setContent(prev => ({ ...prev, ...map }))
-      } else if (error) {
-        console.warn('Site content fetch info:', error.message)
-      }
-    } catch (err) {
-      console.warn('Content fetch error:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    load()
+    supabase
+      .from('site_content')
+      .select('section_key, content')
+      .then(({ data, error }) => {
+        if (error) {
+          setState('error')
+          toast.error(`Could not load content: ${error.message}`)
+          return
+        }
+        const map: Record<string, string> = {}
+        for (const row of data ?? []) map[row.section_key] = row.content
+        setContent(map)
+        setState('ready')
+      })
   }, [])
 
-  const handleSave = async (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setSaving(true)
-    
-    // We update all keys that exist
-    for (const key of Object.keys(content)) {
-      await supabase.from('site_content').update({ content: content[key], updated_at: new Date().toISOString() }).eq('section_key', key)
-    }
-    
-    toast.success('Content updated successfully')
+    const rows = FIELDS.filter((f) => (content[f.key] ?? '').trim() !== '').map((f) => ({
+      section_key: f.key,
+      content: content[f.key].trim(),
+      updated_at: new Date().toISOString(),
+    }))
+    const { error } = await supabase.from('site_content').upsert(rows, { onConflict: 'section_key' })
     setSaving(false)
+    if (error) {
+      toast.error(`Save failed: ${error.message}`)
+      return
+    }
+    toast.success(`Saved ${rows.length} section${rows.length === 1 ? '' : 's'}`)
   }
 
   return (
-    <div className="p-8 max-w-4xl">
-      <h1 className="text-2xl font-display font-black tracking-widest text-white uppercase mb-8">Content Management</h1>
-      
-      {loading ? (
-        <p className="text-slate-400">Loading...</p>
+    <div className="p-5 sm:p-8 lg:p-10 max-w-3xl mx-auto space-y-6">
+      <header>
+        <h1 className="text-h2 text-ink">Site content</h1>
+        <p className="mt-1 text-sm text-muted">Mission, vision and core values stored in the database.</p>
+      </header>
+
+      <p className="card border-l-4 border-l-warning p-4 text-sm text-muted">
+        <strong className="text-ink">Note:</strong> the public website currently shows the mission statement from bundled copy, not from this table. Saving here stores the text for when that integration is switched on — see WEBSITE_AUDIT.md (product decisions).
+      </p>
+
+      {state === 'loading' ? (
+        <p className="text-sm text-muted" role="status">Loading…</p>
+      ) : state === 'error' ? (
+        <p className="text-sm text-danger" role="alert">Content could not be loaded.</p>
       ) : (
-        <form onSubmit={handleSave} className="space-y-8">
-          <div className="bg-[#0f172a] border border-white/5 p-8 rounded-sm space-y-6">
-            
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Corporate Mission</label>
-              <textarea 
-                value={content.mission || ''} 
-                onChange={e => setContent({...content, mission: e.target.value})} 
-                className="w-full bg-[#020617] border border-white/10 text-white px-4 py-3 h-24 focus:border-fire outline-none" 
+        <form onSubmit={save} className="card p-6 sm:p-8 space-y-6" noValidate>
+          {FIELDS.map((f) => (
+            <div key={f.key}>
+              <label htmlFor={`content-${f.key}`} className="field-label">{f.label}</label>
+              <textarea
+                id={`content-${f.key}`}
+                rows={4}
+                maxLength={2000}
+                value={content[f.key] ?? ''}
+                onChange={(e) => setContent({ ...content, [f.key]: e.target.value })}
+                className="field"
+                aria-describedby={`help-${f.key}`}
               />
+              <p id={`help-${f.key}`} className="mt-1 text-xs text-muted">{f.help}</p>
             </div>
-            
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Corporate Vision</label>
-              <textarea 
-                value={content.vision || ''} 
-                onChange={e => setContent({...content, vision: e.target.value})} 
-                className="w-full bg-[#020617] border border-white/10 text-white px-4 py-3 h-24 focus:border-fire outline-none" 
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Core Values</label>
-              <textarea 
-                value={content.core_values || ''} 
-                onChange={e => setContent({...content, core_values: e.target.value})} 
-                className="w-full bg-[#020617] border border-white/10 text-white px-4 py-3 h-24 focus:border-fire outline-none" 
-              />
-            </div>
-
-          </div>
-          
-          <button 
-            type="submit" 
-            disabled={saving}
-            className="px-10 py-4 bg-fire text-[#0f172a] text-sm font-bold uppercase tracking-widest rounded-sm hover:bg-fire-100 transition-colors disabled:opacity-50"
-          >
-            {saving ? 'Saving Changes...' : 'Publish Content'}
+          ))}
+          <button type="submit" disabled={saving} className="btn-primary" aria-busy={saving}>
+            {saving ? 'Saving…' : 'Save content'}
           </button>
         </form>
       )}

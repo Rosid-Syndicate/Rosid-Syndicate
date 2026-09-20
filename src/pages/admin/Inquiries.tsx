@@ -1,310 +1,241 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import {
-  PhoneIcon,
-  BuildingOffice2Icon,
-  TrashIcon,
-  ArrowPathIcon,
-  MagnifyingGlassIcon,
-  PlusIcon,
-  InboxIcon
-} from '@heroicons/react/24/outline'
-import { supabase } from '../../lib/supabase'
+import { useCallback, useEffect, useId, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { PhoneIcon, BuildingOffice2Icon, TrashIcon, ArrowPathIcon, MagnifyingGlassIcon, InboxIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import toast from 'react-hot-toast'
+import { supabase } from '../../lib/supabase'
+import { useConfirm } from '../../components/ConfirmDialog'
 
 type Inquiry = {
   id: string
   inquiry_type: string
   name: string
-  company_name: string
+  company_name: string | null
   email: string
-  phone: string
-  subject: string
+  phone: string | null
+  subject: string | null
   message: string
   status: string
   created_at: string
 }
 
+export const STATUSES = ['New', 'Read', 'Contacted', 'Closed'] as const
+type Status = (typeof STATUSES)[number]
+
+const TONE: Record<string, string> = {
+  New: 'bg-warning-soft text-warning border-warning/30',
+  Read: 'bg-canvas text-ink border-line',
+  Contacted: 'bg-info-soft text-info border-info/30',
+  Closed: 'bg-success-soft text-success border-success/30',
+}
+
+export function StatusBadge({ status }: { status: string }) {
+  return (
+    <span className={`inline-block px-2.5 py-1 text-xs font-bold uppercase tracking-[0.06em] rounded-sm border ${TONE[status] ?? TONE.Read}`}>
+      {status}
+    </span>
+  )
+}
+
+/**
+ * Inquiry management. Status changes and deletions now report the real result:
+ * the previous version applied optimistic state and showed a success toast even
+ * when Supabase returned an error.
+ */
 export default function Inquiries() {
+  const confirm = useConfirm()
   const [inquiries, setInquiries] = useState<Inquiry[]>([])
-  const [loading, setLoading] = useState(true)
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [refreshing, setRefreshing] = useState(false)
   const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [params, setParams] = useSearchParams()
+  const filterStatus = params.get('status') ?? 'all'
+  const searchId = useId()
 
-  const load = async (showToast = false) => {
-    if (showToast) setRefreshing(true)
-    try {
-      const { data, error } = await supabase
-        .from('inquiries')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!error && data) {
-        setInquiries(data)
-        if (showToast) toast.success(`Loaded ${data.length} inquiries`)
-      } else if (error) {
-        console.warn('Inquiries Supabase notice:', error.message)
-      }
-    } catch (err: any) {
-      console.warn('Inquiries fetch error:', err)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
+  const load = useCallback(async (manual = false) => {
+    if (manual) setRefreshing(true)
+    const { data, error } = await supabase
+      .from('inquiries')
+      .select('id, inquiry_type, name, company_name, email, phone, subject, message, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(500)
+    if (error) {
+      setState('error')
+      if (manual) toast.error(`Could not load inquiries: ${error.message}`)
+    } else {
+      setInquiries((data ?? []) as Inquiry[])
+      setState('ready')
+      if (manual) toast.success(`Loaded ${data?.length ?? 0} inquiries`)
     }
-  }
+    setRefreshing(false)
+  }, [])
 
   useEffect(() => {
     load()
-  }, [])
+  }, [load])
 
-  const updateStatus = async (id: string, newStatus: string) => {
-    try {
-      const { error } = await supabase.from('inquiries').update({ status: newStatus }).eq('id', id)
-      if (error) {
-        console.warn('Status update notice:', error.message)
-      }
-      setInquiries(inquiries.map(i => i.id === id ? { ...i, status: newStatus } : i))
-      toast.success(`Inquiry marked as ${newStatus}`)
-    } catch (err) {
-      toast.error('Failed to update status')
+  const updateStatus = async (id: string, newStatus: Status) => {
+    const previous = inquiries
+    setInquiries((list) => list.map((i) => (i.id === id ? { ...i, status: newStatus } : i)))
+    const { error } = await supabase.from('inquiries').update({ status: newStatus }).eq('id', id)
+    if (error) {
+      setInquiries(previous)
+      toast.error(`Status not saved: ${error.message}`)
+      return
     }
+    toast.success(`Marked as ${newStatus}`)
   }
 
-  const deleteInquiry = async (id: string, name: string) => {
-    if (!window.confirm(`Are you sure you want to delete inquiry from "${name}"?`)) return
-    try {
-      const { error } = await supabase.from('inquiries').delete().eq('id', id)
-      if (error) {
-        console.warn('Delete notice:', error.message)
-      }
-      setInquiries(inquiries.filter(i => i.id !== id))
-      toast.success('Inquiry deleted')
-    } catch (err) {
-      toast.error('Failed to delete inquiry')
+  const deleteInquiry = async (inq: Inquiry) => {
+    const ok = await confirm({ title: `Delete the inquiry from "${inq.name}"?`, description: 'Consider marking it Closed instead — deletion cannot be undone.', confirmLabel: 'Delete inquiry', tone: 'danger' })
+    if (!ok) return
+    const { error } = await supabase.from('inquiries').delete().eq('id', inq.id)
+    if (error) {
+      toast.error(`Delete failed: ${error.message}`)
+      return
     }
+    setInquiries((list) => list.filter((i) => i.id !== inq.id))
+    toast.success('Inquiry deleted')
   }
 
-  const filteredInquiries = inquiries.filter(i => {
-    const matchesSearch = 
-      (i.name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (i.company_name || '').toLowerCase().includes(search.toLowerCase()) ||
-      (i.email || '').toLowerCase().includes(search.toLowerCase()) ||
-      (i.subject || '').toLowerCase().includes(search.toLowerCase()) ||
-      (i.message || '').toLowerCase().includes(search.toLowerCase())
-
+  const q = search.trim().toLowerCase()
+  const filtered = inquiries.filter((i) => {
+    const matchesSearch =
+      !q || [i.name, i.company_name, i.email, i.subject, i.message].some((v) => (v || '').toLowerCase().includes(q))
     const matchesStatus = filterStatus === 'all' || (i.status || '').toLowerCase() === filterStatus.toLowerCase()
     return matchesSearch && matchesStatus
   })
 
+  /** CSV of the currently filtered rows (built in the browser; nothing is sent anywhere). */
+  const exportCsv = () => {
+    const esc = (v: string | null) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const header = ['Received', 'Status', 'Type', 'Name', 'Company', 'Email', 'Phone', 'Subject', 'Message']
+    const lines = filtered.map((i) => [i.created_at, i.status, i.inquiry_type, i.name, i.company_name, i.email, i.phone, i.subject, i.message].map(esc).join(','))
+    const blob = new Blob(['﻿' + [header.join(','), ...lines].join('\r\n')], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `inquiries-${filterStatus}-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
+  const setFilter = (st: string) => {
+    const next = new URLSearchParams(params)
+    if (st === 'all') next.delete('status')
+    else next.set('status', st)
+    setParams(next, { replace: true })
+  }
+
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-[1600px] mx-auto space-y-8 bg-[#F8FAFC] min-h-screen">
-      
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="p-5 sm:p-8 lg:p-10 max-w-[1400px] mx-auto space-y-6">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#011E52] tracking-tight uppercase">
-            Inquiry & Tender Management
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Review incoming tender RFQs, foreign contractor requests, and corporate inquiries.
-          </p>
+          <h1 className="text-h2 text-ink">Inquiries</h1>
+          <p className="mt-1 text-sm text-muted">Contact messages and tender / RFQ submissions from the website.</p>
         </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => load(true)}
-            disabled={refreshing}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-xs font-bold uppercase tracking-wider text-[#011E52] shadow-sm transition-all active:scale-95 disabled:opacity-50"
-          >
-            <ArrowPathIcon className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+        <div className="flex gap-2">
+          <button type="button" onClick={exportCsv} disabled={filtered.length === 0} className="btn-secondary btn-sm">
+            <ArrowDownTrayIcon className="w-4 h-4" aria-hidden="true" /> Export CSV ({filtered.length})
           </button>
-
-          <Link
-            to="/tender-inquiry"
-            target="_blank"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#FD7B00] hover:bg-[#E06A00] text-white text-xs font-bold uppercase tracking-wider shadow-md transition-all active:scale-95"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Test Form
-          </Link>
+          <button type="button" onClick={() => load(true)} disabled={refreshing} className="btn-secondary btn-sm" aria-busy={refreshing}>
+            <ArrowPathIcon className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" /> Refresh
+          </button>
         </div>
-      </div>
+      </header>
 
-      {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
-        
-        {/* Status Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          {['all', 'New', 'Contacted', 'Read', 'Closed'].map((st) => {
-            const count = st === 'all' 
-              ? inquiries.length 
-              : inquiries.filter(i => (i.status || '').toLowerCase() === st.toLowerCase()).length
-            
-            const isActive = filterStatus.toLowerCase() === st.toLowerCase()
+      <div className="card p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div role="group" aria-label="Filter by status" className="flex flex-wrap gap-2">
+          {['all', ...STATUSES].map((st) => {
+            const count = st === 'all' ? inquiries.length : inquiries.filter((i) => (i.status || '').toLowerCase() === st.toLowerCase()).length
+            const active = filterStatus.toLowerCase() === st.toLowerCase()
             return (
-              <button
-                key={st}
-                onClick={() => setFilterStatus(st)}
-                className={`px-3.5 py-1.5 text-xs font-bold uppercase rounded-lg transition-colors ${
-                  isActive
-                    ? 'bg-[#011E52] text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {st === 'all' ? 'All' : st} ({count})
+              <button key={st} type="button" onClick={() => setFilter(st)} aria-pressed={active} className={`btn btn-sm ${active ? 'bg-ink text-white' : 'bg-canvas text-ink hover:bg-line'}`}>
+                {st === 'all' ? 'All' : st} <span className="tabular-nums opacity-70">({count})</span>
               </button>
             )
           })}
         </div>
-
-        {/* Search Bar */}
         <div className="relative w-full md:w-80">
-          <MagnifyingGlassIcon className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search by client, company, email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 text-xs rounded-lg focus:outline-none focus:border-[#FD7B00]"
-          />
+          <label htmlFor={searchId} className="sr-only">Search inquiries</label>
+          <MagnifyingGlassIcon className="w-4 h-4 text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden="true" />
+          <input id={searchId} type="search" placeholder="Search name, company, email, message…" value={search} onChange={(e) => setSearch(e.target.value)} className="field pl-9 py-2 text-sm" />
         </div>
       </div>
 
-      {/* Inquiries Table or Empty State */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-16 text-center text-slate-400">
-            <div className="w-8 h-8 border-2 border-[#FD7B00] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-sm font-medium">Fetching inquiries from database...</p>
-          </div>
-        ) : filteredInquiries.length === 0 ? (
-          <div className="p-16 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-              <InboxIcon className="w-8 h-8 text-slate-400" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-700">No Inquiries Found</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                {search || filterStatus !== 'all' 
-                  ? 'No inquiries match your current search or filter criteria.' 
-                  : 'New submissions from the Contact Us or Tender Inquiry forms will appear here in real-time.'}
-              </p>
-            </div>
-            <div className="pt-2">
-              <Link
-                to="/#contact"
-                target="_blank"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#011E52] text-white text-xs font-bold uppercase tracking-wider rounded-lg hover:bg-[#FD7B00] transition-colors"
-              >
-                <PlusIcon className="w-4 h-4" /> Submit Sample Inquiry
-              </Link>
-            </div>
+      <div className="card overflow-hidden">
+        {state === 'loading' ? (
+          <p className="p-10 text-sm text-muted" role="status">Loading inquiries…</p>
+        ) : state === 'error' ? (
+          <p className="p-10 text-sm text-danger" role="alert">Inquiries could not be loaded. Check your admin access and try again.</p>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 text-center">
+            <InboxIcon className="w-8 h-8 text-muted mx-auto" aria-hidden="true" />
+            <p className="mt-3 text-sm font-semibold text-ink">No inquiries found</p>
+            <p className="mt-1 text-xs text-muted">{q || filterStatus !== 'all' ? 'Nothing matches the current search or filter.' : 'New submissions will appear here.'}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#011E52] text-white text-xs font-bold uppercase tracking-wider">
+              <caption className="sr-only">Inquiries ({filtered.length})</caption>
+              <thead className="bg-canvas text-xs font-bold uppercase tracking-[0.08em] text-muted">
                 <tr>
-                  <th className="p-4 pl-6">Client / Contact Details</th>
-                  <th className="p-4">Type / Scope</th>
-                  <th className="p-4">Message Content</th>
-                  <th className="p-4">Submission Date</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 pr-6 text-right">Actions</th>
+                  <th scope="col" className="px-5 py-3">Contact</th>
+                  <th scope="col" className="px-5 py-3">Type</th>
+                  <th scope="col" className="px-5 py-3">Message</th>
+                  <th scope="col" className="px-5 py-3">Received</th>
+                  <th scope="col" className="px-5 py-3">Status</th>
+                  <th scope="col" className="px-5 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredInquiries.map((req) => (
-                  <tr key={req.id} className="hover:bg-slate-50/80 transition-colors align-top">
-                    
-                    {/* Contact Col */}
-                    <td className="p-4 pl-6">
-                      <div className="text-sm font-bold text-[#011E52]">{req.name}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">{req.email}</div>
+              <tbody className="divide-y divide-line align-top">
+                {filtered.map((req) => (
+                  <tr key={req.id} className="hover:bg-canvas/60">
+                    <td className="px-5 py-4 min-w-[14rem]">
+                      <div className="font-semibold text-ink">{req.name}</div>
+                      <a href={`mailto:${req.email}`} className="block text-xs text-muted hover:text-ink break-all">{req.email}</a>
                       {req.phone && (
-                        <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                          <PhoneIcon className="w-3 h-3" /> {req.phone}
-                        </div>
+                        <a href={`tel:${req.phone.replace(/[^\d+]/g, '')}`} className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted hover:text-ink">
+                          <PhoneIcon className="w-3 h-3" aria-hidden="true" /> {req.phone}
+                        </a>
                       )}
                       {req.company_name && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-bold uppercase px-2 py-0.5 bg-slate-100 text-slate-700 rounded border border-slate-200">
-                          <BuildingOffice2Icon className="w-3 h-3 text-[#FD7B00]" />
-                          {req.company_name}
+                        <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-ink bg-canvas border border-line px-2 py-0.5 rounded-sm">
+                          <BuildingOffice2Icon className="w-3 h-3 text-accent-text" aria-hidden="true" /> {req.company_name}
                         </span>
                       )}
                     </td>
-
-                    {/* Inquiry Type Col */}
-                    <td className="p-4 whitespace-nowrap">
-                      <span className="inline-block px-2.5 py-1 bg-[#011E52]/10 text-[#011E52] text-xs font-bold uppercase tracking-wide rounded-md">
-                        {req.inquiry_type || 'General'}
-                      </span>
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <span className="text-xs font-bold text-ink">{req.inquiry_type}</span>
                       {req.subject && req.subject !== req.inquiry_type && (
-                        <div className="text-xs font-medium text-slate-600 mt-1 truncate max-w-[180px]" title={req.subject}>
-                          {req.subject}
-                        </div>
+                        <div className="text-xs text-muted mt-1 max-w-[12rem] truncate" title={req.subject}>{req.subject}</div>
                       )}
                     </td>
-
-                    {/* Message Col */}
-                    <td className="p-4 max-w-md">
-                      <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        {req.message}
-                      </p>
+                    <td className="px-5 py-4 max-w-md">
+                      <p className="text-xs text-ink whitespace-pre-line leading-relaxed bg-canvas p-3 rounded-sm border border-line max-h-40 overflow-y-auto">{req.message}</p>
                     </td>
-
-                    {/* Date Col */}
-                    <td className="p-4 text-xs text-slate-500 whitespace-nowrap">
-                      <div className="font-medium text-slate-700">
-                        {new Date(req.created_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        {new Date(req.created_at).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
+                    <td className="px-5 py-4 text-xs text-muted whitespace-nowrap">
+                      <time dateTime={req.created_at}>
+                        {new Date(req.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        <span className="block">{new Date(req.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </time>
                     </td>
-
-                    {/* Status Dropdown */}
-                    <td className="p-4 whitespace-nowrap">
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <label htmlFor={`status-${req.id}`} className="sr-only">Status for {req.name}</label>
                       <select
+                        id={`status-${req.id}`}
                         value={req.status || 'New'}
-                        onChange={(e) => updateStatus(req.id, e.target.value)}
-                        className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border focus:outline-none transition-colors cursor-pointer ${
-                          req.status === 'New'
-                            ? 'bg-amber-50 text-amber-800 border-amber-200 focus:border-amber-400'
-                            : req.status === 'Contacted'
-                            ? 'bg-sky-50 text-sky-800 border-sky-200 focus:border-sky-400'
-                            : req.status === 'Read'
-                            ? 'bg-purple-50 text-purple-800 border-purple-200 focus:border-purple-400'
-                            : 'bg-emerald-50 text-emerald-800 border-emerald-200 focus:border-emerald-400'
-                        }`}
+                        onChange={(e) => updateStatus(req.id, e.target.value as Status)}
+                        className={`text-xs font-bold uppercase tracking-[0.06em] px-2.5 py-1.5 rounded-sm border cursor-pointer focus:outline-none focus:ring-2 focus:ring-ink/20 ${TONE[req.status] ?? TONE.Read}`}
                       >
-                        <option value="New">New</option>
-                        <option value="Read">Read</option>
-                        <option value="Contacted">Contacted</option>
-                        <option value="Closed">Closed</option>
+                        {STATUSES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
                       </select>
                     </td>
-
-                    {/* Actions */}
-                    <td className="p-4 pr-6 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => deleteInquiry(req.id, req.name)}
-                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors"
-                        title="Delete Inquiry"
-                      >
-                        <TrashIcon className="w-4 h-4" />
+                    <td className="px-5 py-4 text-right whitespace-nowrap">
+                      <button type="button" onClick={() => deleteInquiry(req)} className="btn-ghost btn-sm text-danger hover:bg-danger-soft" aria-label={`Delete inquiry from ${req.name}`}>
+                        <TrashIcon className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </td>
-
                   </tr>
                 ))}
               </tbody>
@@ -312,7 +243,6 @@ export default function Inquiries() {
           </div>
         )}
       </div>
-
     </div>
   )
 }

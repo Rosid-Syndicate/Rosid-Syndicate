@@ -95,7 +95,7 @@ Our strength lies in the synergistic alignment of five dedicated corporate subsi
 Entering Nepal's infrastructure market presents remarkable opportunities, from the 10,000 MW hydropower master plan to trans-Himalayan transmission corridors. However, foreign contractors frequently face regulatory friction under the Public Procurement Act (PPA), local bank guarantee compliance, and complex regional logistics.
 
 Rosid Syndicates Group acts as the definitive in-country operational anchor. By uniting financial guarantees, bulk material supply lines, and civil engineering machinery under one unified group structure, we eliminate project bottlenecks and guarantee timeline integrity.`,
-    featured_image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=100&w=3840&auto=format&fit=crop',
+    featured_image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab',
     category: 'Company News',
     category_slug: 'company-news',
     author: 'Roshan Pandey',
@@ -140,7 +140,7 @@ Through **Appi Saipal Financial Solutions Pvt. Ltd.**, Rosid Syndicates Group re
 - **Rapid SWIFT Confirmation:** Expedited MT760/MT799 verification for overseas banks.
 - **Tripartite Guarantee Structuring:** Direct coordination between the foreign EPC sponsor, the Nepalese issuing bank, and the procuring government agency.
 - **Cost Minimization:** Negotiating competitive issuance fees and minimal margin collateral holding requirements.`,
-    featured_image: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a?q=100&w=3840&auto=format&fit=crop',
+    featured_image: 'https://images.unsplash.com/photo-1554469384-e58fac16e23a',
     category: 'Foreign Contractors',
     category_slug: 'foreign-contractors',
     author: 'Appi Saipal Advisory Team',
@@ -224,7 +224,7 @@ Partnering with a proven local conglomerate like **Rosid Syndicates Group** tran
 - **Equipment & Heavy Machinery:** Access to crushing plants, dump trucks, and excavators through our group logistics and machinery networks.
 - **Certified Bulk Materials:** Immediate bulk procurement of OPC 53 Grade cement, TMT rebar, and aggregate through *Roshan Enterprises*.
 - **Local Workforce & Community Liaisons:** Smooth social license to operate, land acquisition mediation, and site security.`,
-    featured_image: 'https://images.unsplash.com/photo-1541888056262-563b7852f826?q=100&w=3840&auto=format&fit=crop',
+    featured_image: 'https://images.unsplash.com/photo-1527335988388-b40ee248d80c',
     category: 'Foreign Contractors',
     category_slug: 'foreign-contractors',
     author: 'Roshan Pandey & Advisory Board',

@@ -1,56 +1,64 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
+import { unsplash, unsplashSrcSet } from '../lib/images'
 
 interface PageHeaderProps {
-  title: string;
-  subtitle?: string;
-  image?: string;
-  backLink?: string;
-  backLabel?: string;
+  title: string
+  subtitle?: string
+  /** Optional supporting sentence rendered under the title. */
+  lead?: string
+  image?: string
+  backLink?: string
+  backLabel?: string
+  /** Shorter header for utility pages (forms, policies). */
+  compact?: boolean
+  /** Use "p" when the page renders its own <h1> (blog post, category). */
+  titleAs?: 'h1' | 'p'
 }
 
-export default function PageHeader({ 
-  title, 
-  subtitle = "Rosid Syndicates Group", 
-  image = "https://images.unsplash.com/photo-1541888056262-563b7852f826?q=100&w=3840&auto=format&fit=crop",
-  backLink,
-  backLabel = "Back to Home"
-}: PageHeaderProps) {
-  return (
-    <section className="relative pt-40 pb-32 overflow-hidden flex items-center min-h-[75vh]">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-[#011E52] bg-cover bg-center bg-no-repeat bg-fixed"
-        style={{ backgroundImage: `url("${image}")` }}
-      >
-        {/* Lighter Navy Overlay for 4K Clarity */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#011E52]/95 via-[#011E52]/60 to-[#011E52]/95" />
-      </div>
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1527335988388-b40ee248d80c'
 
-      <div className="container relative z-10">
+/**
+ * Page hero for inner pages. The photograph is a real <img> with srcset (was a
+ * 4K CSS background with `background-attachment: fixed`, which is unsupported on
+ * iOS and forces repaints on scroll). Text sits on a solid navy panel so
+ * contrast never depends on the photo.
+ */
+export default function PageHeader({
+  title,
+  subtitle = 'Rosid Syndicates Group',
+  lead,
+  image = DEFAULT_IMAGE,
+  backLink,
+  backLabel = 'Back to home',
+  compact = false,
+  titleAs = 'h1',
+}: PageHeaderProps) {
+  const TitleTag = titleAs
+  return (
+    <section className={`relative bg-ink text-white overflow-hidden ${compact ? 'pt-32 pb-14 lg:pt-36 lg:pb-16' : 'pt-36 pb-20 lg:pt-44 lg:pb-28'}`}>
+      <img
+        src={unsplash(image, { w: 1600, q: 60 })}
+        srcSet={unsplashSrcSet(image, [768, 1200, 1600, 2000], 60)}
+        sizes="100vw"
+        alt=""
+        aria-hidden="true"
+        decoding="async"
+        fetchPriority="high"
+        className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-luminosity"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/90 to-ink/60" aria-hidden="true" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-accent" aria-hidden="true" />
+
+      <div className="container relative">
         {backLink && (
-          <Link to={backLink} className="inline-flex items-center gap-2 text-sm font-bold text-slate-300 hover:text-[#FD7B00] transition-colors mb-12 uppercase tracking-widest">
-            <ArrowLeftIcon className="w-4 h-4" /> {backLabel}
+          <Link to={backLink} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-300 hover:text-white mb-8 rounded-sm">
+            <ArrowLeftIcon className="w-4 h-4" aria-hidden="true" /> {backLabel}
           </Link>
         )}
-        
-        <motion.p 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          className="eyebrow text-[#FD7B00] uppercase font-bold tracking-widest mb-4 bg-white/10 px-4 py-1.5 rounded-sm inline-block backdrop-blur-sm border border-white/10"
-        >
-          {subtitle}
-        </motion.p>
-        
-        <motion.h1 
-          initial={{ opacity: 0, y: 30 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.1 }}
-          className="text-5xl md:text-7xl lg:text-[5rem] font-bold font-sans text-white tracking-tight leading-[1.05] max-w-5xl"
-        >
-          {title}
-        </motion.h1>
+        <p className="eyebrow eyebrow-on-dark">{subtitle}</p>
+        <TitleTag className={`mt-4 text-white max-w-4xl ${compact ? 'text-h1' : 'text-display'}`}>{title}</TitleTag>
+        {lead && <p className="mt-6 max-w-2xl text-lead text-slate-300">{lead}</p>}
       </div>
     </section>
   )

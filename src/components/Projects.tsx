@@ -1,51 +1,51 @@
-import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
+import { sectors } from '../data/sectors'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 
-const projects = [
-  { name: 'National Hydroelectric Dam Phase II', location: 'Gandaki Province, Nepal', img: 'https://images.unsplash.com/photo-1541888056262-563b7852f826?q=100&w=3840&auto=format&fit=crop', colSpan: 'col-span-1 md:col-span-2', height: 'h-[500px]' },
-  { name: 'Kathmandu Metro Civil Works', location: 'Bagmati Province, Nepal', img: 'https://images.unsplash.com/photo-1504307651254-35680f356f12?q=100&w=3840&auto=format&fit=crop', colSpan: 'col-span-1', height: 'h-[500px]' },
-  { name: 'Koshi Bridge Expansion', location: 'Koshi Province, Nepal', img: 'https://images.unsplash.com/photo-1574320297042-63bc58baf00c?q=100&w=3840&auto=format&fit=crop', colSpan: 'col-span-1', height: 'h-[600px]' },
-  { name: 'Trans-Himalayan Transmission Grid', location: 'Karnali Province, Nepal', img: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=100&w=3840&auto=format&fit=crop', colSpan: 'col-span-1 md:col-span-2', height: 'h-[600px]' },
-]
-
+/**
+ * Sector grid (home). Cards link to the relevant capability or company page.
+ */
 export default function Projects() {
   return (
-    <section id="projects" className="py-32 bg-white">
+    <section id="projects" className="py-20 lg:py-28 bg-surface border-y border-line" aria-labelledby="sectors-heading">
       <div className="container">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-16">
-          <div>
-            <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="eyebrow uppercase text-[#FD7B00]">Selected Works</motion.p>
-            <motion.h2 initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mt-6 text-4xl md:text-5xl lg:text-[4.5rem] font-bold font-sans text-[#011E52] leading-[1.05] tracking-tight">Nation-Building<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FD7B00] to-[#FFB067]">Projects.</span></motion.h2>
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-12">
+          <div className="max-w-2xl">
+            <p className="eyebrow">Sectors</p>
+            <h2 id="sectors-heading" className="mt-5 text-h2">Where the group operates.</h2>
           </div>
-          <a href="#/projects" className="text-sm font-bold text-slate-500 hover:text-[#FD7B00] transition-colors uppercase tracking-widest pb-4">View All Projects →</a>
+          <Link to="/projects" className="link-arrow shrink-0">
+            Sector overview <ArrowRightIcon className="w-4 h-4" aria-hidden="true" />
+          </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {projects.map((p, i) => (
-            <motion.div 
-              key={p.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.15, duration: 0.8 }}
-              className={`group relative overflow-hidden rounded-sm cursor-pointer ${p.colSpan} ${p.height}`}
-            >
-              {/* Background Image */}
-              <div 
-                className="absolute inset-0 bg-[#011E52] bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
-                style={{ backgroundImage: `url("${p.img}")` }}
-              />
-              
-              {/* Lighter Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#011E52]/95 via-[#011E52]/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
-
-              {/* Content */}
-              <div className="absolute bottom-0 left-0 p-10 w-full transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                <p className="text-[#FD7B00] font-bold text-xs uppercase tracking-widest mb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{p.location}</p>
-                <h3 className="text-3xl font-bold text-white uppercase tracking-wide leading-snug">{p.name}</h3>
-              </div>
-            </motion.div>
+        <ul className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {sectors.map((s) => (
+            <li key={s.slug} className={s.span === 'wide' ? 'md:col-span-2' : ''}>
+              <Link to={s.to} className="group relative block h-72 lg:h-80 overflow-hidden rounded-sm bg-ink focus-visible:ring-2 focus-visible:ring-accent">
+                <img
+                  src={unsplash(s.image, { w: 1000, q: 65 })}
+                  srcSet={unsplashSrcSet(s.image, [640, 1000, 1400], 65)}
+                  onError={hideBrokenImage}
+                  sizes={s.span === 'wide' ? '(min-width: 768px) 66vw, 100vw' : '(min-width: 768px) 33vw, 100vw'}
+                  loading="lazy"
+                  decoding="async"
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover opacity-70 transition-transform duration-slow motion-safe:group-hover:scale-[1.03]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-ink/10" aria-hidden="true" />
+                <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8">
+                  <h3 className="text-xl lg:text-2xl font-bold text-white">{s.name}</h3>
+                  <p className="mt-2 text-sm text-slate-200 leading-relaxed max-w-xl">{s.summary}</p>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-accent">
+                    Explore <ArrowRightIcon className="w-4 h-4" aria-hidden="true" />
+                  </span>
+                </div>
+              </Link>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   )

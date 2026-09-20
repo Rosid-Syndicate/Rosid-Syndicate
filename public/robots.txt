@@ -1,7 +1,13 @@
+# https://www.rosiddai.com
 User-agent: *
 Allow: /
 
-# Prevent indexing of placeholder or dynamic detail routes lacking real data
+# Private application areas (also protected by authentication and X-Robots-Tag)
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+
+# Case-study routes have no published data yet; re-enable when src/data/projects.ts is populated
 Disallow: /project/
 
 Sitemap: https://www.rosiddai.com/sitemap.xml

@@ -36,3 +36,6 @@ dist-ssr
 
 # Supabase
 supabase/.temp/
+
+# Local tooling / editor
+.claude/

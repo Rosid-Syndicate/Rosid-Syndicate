@@ -1,63 +1,35 @@
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import type { Company } from '../data/companies'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
 
-export default function CompanyCard({ company, index }: { company: Company, index: number }) {
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    e.currentTarget.style.setProperty('--mouse-x', `${x}px`)
-    e.currentTarget.style.setProperty('--mouse-y', `${y}px`)
-  }
-
+export default function CompanyCard({ company, index }: { company: Company; index: number }) {
+  const isLocal = company.image.startsWith('/')
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      whileInView={{ opacity: 1, y: 0 }} 
-      viewport={{ once: true }} 
-      transition={{ delay: index * 0.1 }} 
-      onMouseMove={handleMouseMove}
-      className="group relative overflow-hidden transition-all duration-500 h-[400px] sm:h-[450px] w-full flex flex-col justify-end p-8 sm:p-10 border-0 cursor-pointer"
+    <Link
+      to={`/companies/${company.slug}`}
+      className="group relative flex flex-col justify-end h-[380px] sm:h-[420px] overflow-hidden rounded-sm bg-ink focus-visible:ring-2 focus-visible:ring-accent"
     >
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 z-0 bg-[#011E52] bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-        style={{ backgroundImage: `url("${company.image}")` }}
+      <img
+        src={isLocal ? '/img/hydropower-plant-1024.webp' : unsplash(company.image, { w: 800, q: 65 })}
+        srcSet={isLocal ? '/img/hydropower-plant-640.webp 640w, /img/hydropower-plant-1024.webp 1024w' : unsplashSrcSet(company.image, [480, 800, 1200], 65)}
+        onError={hideBrokenImage}
+        sizes="(min-width: 1024px) 30vw, (min-width: 768px) 45vw, 100vw"
+        loading="lazy"
+        decoding="async"
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover opacity-60 transition-transform duration-slow motion-safe:group-hover:scale-[1.03]"
       />
-      <div className="absolute inset-0 z-0 bg-gradient-to-t from-[#011E52]/90 via-[#011E52]/40 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/10" aria-hidden="true" />
 
-      {/* Dynamic spotlight hover glow */}
-      <div className="absolute inset-0 z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-[radial-gradient(250px_circle_at_var(--mouse-x,0px)_var(--mouse-y,0px),rgba(253,123,0,0.25),transparent_80%)]" />
-
-      <Link to={`/companies/${company.slug}`} className="absolute inset-0 z-30">
-        <span className="sr-only">View {company.name}</span>
-      </Link>
-      
-      <div className="relative z-20">
-        <div className="flex items-start justify-between mb-4">
-          <span className="text-[10px] font-mono text-white/50 font-bold uppercase tracking-widest">0{index + 1}</span>
-        </div>
-        
-        <h3 className="text-2xl font-bold text-white leading-tight pr-4 group-hover:text-[#FD7B00] transition-colors">
-          {company.name}
-        </h3>
-        
-        <div className="mt-4 flex flex-col gap-2">
-          <span className="inline-block px-3 py-1 bg-[#FD7B00]/20 text-[#FD7B00] text-[10px] font-bold uppercase tracking-[0.1em] self-start">
-            Core Scope
-          </span>
-          <p className="text-sm text-white/80 leading-relaxed font-medium line-clamp-2">
-            {company.coreScope}
-          </p>
-        </div>
-        
-        <div className="mt-6 pt-6 border-t border-white/20 flex items-center justify-between">
-          <span className="text-xs font-bold text-white/60 uppercase tracking-[0.15em] group-hover:text-white transition-colors">
-            View Company →
-          </span>
-        </div>
+      <div className="relative p-6 sm:p-8">
+        <span className="font-mono text-xs font-bold text-accent tabular-nums" aria-hidden="true">0{index + 1}</span>
+        <h3 className="mt-3 text-xl sm:text-2xl font-bold text-white leading-tight group-hover:text-accent transition-colors duration-fast">{company.name}</h3>
+        <p className="mt-3 text-sm text-slate-200 leading-relaxed">{company.coreScope}</p>
+        <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-white">
+          View company <ArrowRightIcon className="w-4 h-4 transition-transform duration-fast motion-safe:group-hover:translate-x-1" aria-hidden="true" />
+        </span>
       </div>
-    </motion.div>
+    </Link>
   )
 }

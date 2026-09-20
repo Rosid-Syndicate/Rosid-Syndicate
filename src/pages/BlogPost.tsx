@@ -1,426 +1,233 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { motion, useScroll, useSpring } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { 
-  CalendarIcon, 
-  ClockIcon, 
-  EyeIcon, 
-  ArrowLeftIcon,
-  ShareIcon,
-  TagIcon,
-  FolderIcon,
-  BuildingOffice2Icon
-} from '@heroicons/react/24/outline'
+import { CalendarIcon, ClockIcon, ArrowLeftIcon, ShareIcon, TagIcon, BuildingOffice2Icon } from '@heroicons/react/24/outline'
 import PageHeader from '../components/PageHeader'
+import Seo from '../components/Seo'
+import NotFound from './NotFound'
+import { formatDate } from '../lib/format'
 import { supabase } from '../lib/supabase'
+import { renderMarkdown } from '../lib/markdown'
+import { unsplash, unsplashSrcSet, hideBrokenImage } from '../lib/images'
+import { companies } from '../data/companies'
 import { BlogPost as BlogPostType, INITIAL_BLOG_POSTS } from '../data/blog'
+import { SITE_NAME, SITE_URL, absoluteUrl } from '../config/site'
+
+type LoadState = 'loading' | 'ready' | 'missing'
 
 export default function BlogPost() {
   const { slug } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
   const [post, setPost] = useState<BlogPostType | null>(null)
-  const [relatedPosts, setRelatedPosts] = useState<BlogPostType[]>([])
-  const [loading, setLoading] = useState(true)
-
-  // Scroll reading progress
-  const { scrollYProgress } = useScroll()
-  const scaleX = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
-  })
+  const [related, setRelated] = useState<BlogPostType[]>([])
+  const [state, setState] = useState<LoadState>('loading')
 
   useEffect(() => {
-    window.scrollTo(0, 0)
-
-    async function loadPost() {
+    let cancelled = false
+    async function load() {
       if (!slug) return
-      setLoading(true)
-
-      let currentPost: BlogPostType | null = null
-
+      setState('loading')
+      let current: BlogPostType | null = null
+      let others: BlogPostType[] = []
       try {
-        // Try Supabase first
-        const { data, error } = await supabase
-          .from('blog_posts')
-          .select('*')
-          .eq('slug', slug)
-          .eq('is_published', true)
-          .single()
-
-        if (!error && data) {
-          currentPost = data
-
-          // Increment view count asynchronously
-          supabase
+        const { data } = await supabase.from('blog_posts').select('*').eq('slug', slug).eq('is_published', true).maybeSingle()
+        if (data) {
+          current = data as BlogPostType
+          // Anonymous readers cannot UPDATE blog_posts; the RPC increments safely.
+          supabase.rpc('increment_post_views', { post_slug: slug }).then(() => {}, () => {})
+          const { data: rel } = await supabase
             .from('blog_posts')
-            .update({ views: (data.views || 0) + 1 })
-            .eq('id', data.id)
-            .then(() => {})
+            .select('id, title, slug, excerpt, featured_image, category, category_slug, author, published_at, reading_time, is_published, views')
+            .eq('is_published', true)
+            .neq('slug', slug)
+            .order('published_at', { ascending: false })
+            .limit(3)
+          others = (rel ?? []) as BlogPostType[]
         }
       } catch (err) {
-        console.warn('Supabase fetch error, checking fallback data:', err)
+        console.warn('Supabase unavailable, using bundled posts:', err)
       }
-
-      // If not in Supabase, search fallback data
-      if (!currentPost) {
-        currentPost = INITIAL_BLOG_POSTS.find((p) => p.slug === slug) || null
-      }
-
-      if (currentPost) {
-        setPost(currentPost)
-        document.title = `${currentPost.title} | Rosid Syndicates Group`
-
-        // Load related posts
-        const related = INITIAL_BLOG_POSTS.filter(
-          (p) => p.slug !== currentPost!.slug && (p.category_slug === currentPost!.category_slug || true)
-        ).slice(0, 3)
-        setRelatedPosts(related)
-      } else {
-        toast.error('Article not found.')
-        navigate('/blog')
-      }
-
-      setLoading(false)
+      if (!current) current = INITIAL_BLOG_POSTS.find((p) => p.slug === slug) || null
+      if (others.length === 0) others = INITIAL_BLOG_POSTS.filter((p) => p.slug !== slug).slice(0, 3)
+      if (cancelled) return
+      setPost(current)
+      setRelated(others)
+      setState(current ? 'ready' : 'missing')
     }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [slug])
 
-    loadPost()
-  }, [slug, navigate])
-
-  const handleShare = (platform: string) => {
+  const share = async (platform: 'linkedin' | 'x' | 'whatsapp' | 'copy') => {
     const url = window.location.href
-    const title = post?.title || 'Rosid Syndicates Group Intelligence'
-
-    if (platform === 'linkedin') {
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank')
-    } else if (platform === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`, '_blank')
-    } else if (platform === 'whatsapp') {
-      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(title + ' ' + url)}`, '_blank')
-    } else if (platform === 'copy') {
-      navigator.clipboard.writeText(url)
-      toast.success('Article link copied to clipboard!')
+    const title = post?.title || SITE_NAME
+    const targets = {
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+      whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${title} ${url}`)}`,
     }
+    if (platform === 'copy') {
+      try {
+        await navigator.clipboard.writeText(url)
+        toast.success('Link copied')
+      } catch {
+        toast.error('Could not copy the link')
+      }
+      return
+    }
+    window.open(targets[platform], '_blank', 'noopener,noreferrer')
   }
 
-  if (loading || !post) {
+  if (state === 'loading') {
     return (
-      <div className="min-h-screen bg-[#F4F4F2] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#011E52] border-t-[#FD7B00]"></div>
+      <div className="min-h-[60vh] flex items-center justify-center" role="status" aria-live="polite">
+        <span className="sr-only">Loading article…</span>
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" aria-hidden="true" />
       </div>
     )
   }
+  if (state === 'missing' || !post) {
+    return <NotFound title="Article not found" message="This article is not published or the link is out of date." backTo="/blog" backLabel="All articles" />
+  }
 
-  // Basic renderer for markdown headings & lists
-  const renderFormattedContent = (content: string) => {
-    return content.split('\n\n').map((paragraph, index) => {
-      const trimmed = paragraph.trim()
-      
-      // H2
-      if (trimmed.startsWith('## ')) {
-        return (
-          <h2 key={index} className="text-2xl sm:text-3xl font-extrabold text-[#011E52] mt-10 mb-5 border-b border-slate-200 pb-3">
-            {trimmed.replace('## ', '')}
-          </h2>
-        )
-      }
-      
-      // H3
-      if (trimmed.startsWith('### ')) {
-        return (
-          <h3 key={index} className="text-xl sm:text-2xl font-bold text-[#011E52] mt-8 mb-4">
-            {trimmed.replace('### ', '')}
-          </h3>
-        )
-      }
-
-      // Blockquote / Divider
-      if (trimmed.startsWith('---')) {
-        return <hr key={index} className="my-8 border-slate-200" />
-      }
-
-      // Code Block
-      if (trimmed.startsWith('```')) {
-        const codeLines = trimmed.replace(/```/g, '').trim()
-        return (
-          <pre key={index} className="bg-[#030914] text-slate-200 p-5 rounded-sm overflow-x-auto text-xs sm:text-sm font-mono my-6 border border-slate-700 shadow-inner">
-            <code>{codeLines}</code>
-          </pre>
-        )
-      }
-
-      // Unordered list
-      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-        const items = trimmed.split('\n').filter(Boolean)
-        return (
-          <ul key={index} className="list-disc pl-6 space-y-2 my-4 text-slate-700 text-base leading-relaxed">
-            {items.map((item, i) => (
-              <li key={i} dangerouslySetInnerHTML={{ __html: item.replace(/^[-*]\s+/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
-            ))}
-          </ul>
-        )
-      }
-
-      // Numbered list
-      if (/^\d+\.\s/.test(trimmed)) {
-        const items = trimmed.split('\n').filter(Boolean)
-        return (
-          <ol key={index} className="list-decimal pl-6 space-y-2.5 my-4 text-slate-700 text-base leading-relaxed">
-            {items.map((item, i) => (
-              <li key={i} dangerouslySetInnerHTML={{ __html: item.replace(/^\d+\.\s+/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
-            ))}
-          </ol>
-        )
-      }
-
-      // Regular paragraph
-      return (
-        <p 
-          key={index} 
-          className="text-slate-700 text-base sm:text-lg leading-relaxed mb-6"
-          dangerouslySetInnerHTML={{ 
-            __html: trimmed
-              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              .replace(/\*(.*?)\*/g, '<em>$1</em>')
-              .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" class="text-[#FD7B00] font-bold hover:underline">$1</a>') 
-          }} 
-        />
-      )
-    })
+  const path = `/blog/${post.slug}`
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    image: [absoluteUrl(unsplash(post.featured_image, { w: 1200, q: 70 }))],
+    datePublished: post.published_at,
+    dateModified: post.updated_at || post.published_at,
+    author: { '@type': 'Person', name: post.author, jobTitle: post.author_role || undefined },
+    publisher: { '@id': `${SITE_URL}/#organization` },
+    mainEntityOfPage: `${SITE_URL}${path}`,
+    articleSection: post.category,
+    keywords: (post.tags ?? []).join(', ') || undefined,
+    inLanguage: 'en',
   }
 
   return (
-    <div className="bg-[#F4F4F2] min-h-screen text-slate-800 relative">
-      
-      {/* Fixed Reading Progress Bar */}
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-1.5 bg-[#FD7B00] z-50 origin-left"
-        style={{ scaleX }}
-      />
-
-      <PageHeader 
+    <div className="bg-canvas min-h-screen">
+      <Seo
         title={post.title}
-        subtitle={`${post.category} • Rosid Intelligence`}
-        image={post.featured_image}
+        description={post.excerpt}
+        path={path}
+        image={unsplash(post.featured_image, { w: 1200, q: 70 })}
+        type="article"
+        article={{ publishedTime: post.published_at, modifiedTime: post.updated_at, author: post.author, section: post.category, tags: post.tags }}
+        breadcrumbs={[
+          { name: 'Home', path: '/' },
+          { name: 'Insights & News', path: '/blog' },
+          { name: post.category, path: `/blog/category/${post.category_slug}` },
+          { name: post.title, path },
+        ]}
+        jsonLd={articleJsonLd}
       />
+      <PageHeader title={post.title} titleAs="p" subtitle={post.category} image={post.featured_image} compact />
 
-      <div className="container py-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-slate-500 mb-8">
-          <Link to="/blog" className="hover:text-[#FD7B00] flex items-center gap-1">
-            <ArrowLeftIcon className="w-3.5 h-3.5" /> Back to All Articles
-          </Link>
-          <span>/</span>
-          <Link to={`/blog/category/${post.category_slug}`} className="text-[#011E52] hover:text-[#FD7B00]">
-            {post.category}
-          </Link>
-        </div>
+      <div className="container py-12 lg:py-16">
+        <nav aria-label="Breadcrumb" className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+          <ol className="flex flex-wrap items-center gap-2">
+            <li><Link to="/blog" className="hover:text-accent-text inline-flex items-center gap-1"><ArrowLeftIcon className="w-3.5 h-3.5" aria-hidden="true" /> All articles</Link></li>
+            <li aria-hidden="true">/</li>
+            <li><Link to={`/blog/category/${post.category_slug}`} className="text-ink hover:text-accent-text">{post.category}</Link></li>
+          </ol>
+        </nav>
 
-        <div className="grid lg:grid-cols-12 gap-12">
-          
-          {/* Main Article Content */}
-          <main className="lg:col-span-8">
-            <article className="bg-white p-6 sm:p-10 lg:p-14 rounded-sm border border-slate-200 shadow-sm">
-              
-              {/* Header Info */}
-              <div className="pb-8 mb-8 border-b border-slate-100">
-                <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500 mb-4">
-                  <span className="bg-[#011E52] text-white px-3 py-1 rounded-sm uppercase tracking-wider text-[11px] font-bold">
-                    {post.category}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <CalendarIcon className="w-4 h-4 text-slate-400" />
-                    {new Date(post.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <ClockIcon className="w-4 h-4 text-slate-400" />
-                    {post.reading_time}
-                  </span>
-                  <span className="flex items-center gap-1.5 ml-auto">
-                    <EyeIcon className="w-4 h-4 text-slate-400" />
-                    {post.views} Views
-                  </span>
-                </div>
-
-                <h1 className="text-2xl sm:text-4xl font-extrabold text-[#011E52] leading-tight mb-4">
-                  {post.title}
-                </h1>
-
-                <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-medium italic bg-slate-50 p-4 border-l-4 border-[#FD7B00]">
-                  "{post.excerpt}"
-                </p>
+        <div className="mt-8 grid lg:grid-cols-12 gap-10">
+          <article className="lg:col-span-8 card p-6 sm:p-10">
+            <header className="pb-8 mb-8 border-b border-line">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted">
+                <span className="font-bold uppercase tracking-[0.08em] text-accent-text">{post.category}</span>
+                <span className="inline-flex items-center gap-1.5"><CalendarIcon className="w-4 h-4" aria-hidden="true" /><time dateTime={post.published_at}>{formatDate(post.published_at, 'long')}</time></span>
+                <span className="inline-flex items-center gap-1.5"><ClockIcon className="w-4 h-4" aria-hidden="true" />{post.reading_time}</span>
               </div>
-
-              {/* Featured Image */}
-              <div className="mb-10 rounded-sm overflow-hidden border border-slate-100 shadow-md">
-                <img 
-                  src={post.featured_image} 
-                  alt={post.title} 
-                  className="w-full h-auto max-h-[480px] object-cover"
-                />
-              </div>
-
-              {/* Rendered Body Content */}
-              <div className="prose prose-slate max-w-none">
-                {renderFormattedContent(post.content)}
-              </div>
-
-              {/* Tags */}
-              {post.tags && post.tags.length > 0 && (
-                <div className="mt-12 pt-6 border-t border-slate-100 flex items-center gap-2 flex-wrap">
-                  <TagIcon className="w-4 h-4 text-slate-400 mr-1" />
-                  <span className="text-xs font-bold uppercase text-slate-400 mr-2">Tags:</span>
-                  {post.tags.map((tag) => (
-                    <span 
-                      key={tag} 
-                      className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-semibold rounded-sm hover:bg-slate-200 transition-colors"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Social Share Section */}
-              <div className="mt-8 pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#011E52]">
-                  <ShareIcon className="w-4 h-4 text-[#FD7B00]" /> Share this analysis:
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleShare('linkedin')}
-                    className="px-3.5 py-1.5 bg-[#0077B5] text-white text-xs font-bold rounded-sm hover:opacity-90 transition-opacity"
-                  >
-                    LinkedIn
-                  </button>
-                  <button
-                    onClick={() => handleShare('twitter')}
-                    className="px-3.5 py-1.5 bg-black text-white text-xs font-bold rounded-sm hover:opacity-90 transition-opacity"
-                  >
-                    X / Twitter
-                  </button>
-                  <button
-                    onClick={() => handleShare('whatsapp')}
-                    className="px-3.5 py-1.5 bg-[#25D366] text-white text-xs font-bold rounded-sm hover:opacity-90 transition-opacity"
-                  >
-                    WhatsApp
-                  </button>
-                  <button
-                    onClick={() => handleShare('copy')}
-                    className="px-3.5 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-sm hover:bg-slate-300 transition-colors"
-                  >
-                    Copy Link
-                  </button>
-                </div>
-              </div>
-
-              {/* Author Biography Box */}
-              <div className="mt-12 p-6 bg-slate-50 rounded-sm border border-slate-200 flex items-start gap-4">
-                <div className="w-14 h-14 rounded-full bg-[#011E52] text-white grid place-items-center font-black text-xl shrink-0 shadow-md">
-                  {post.author.charAt(0)}
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-[#011E52]">{post.author}</h4>
-                  <p className="text-xs font-semibold text-[#FD7B00] mb-2">{post.author_role || 'Executive Leadership'}</p>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    Published by the corporate governance & industry advisory desk at Rosid Syndicates Group, overseeing commercial trade, mega project financing, and nationwide EPC executions in Nepal.
-                  </p>
-                </div>
-              </div>
-
-            </article>
-          </main>
-
-          {/* Sidebar */}
-          <aside className="lg:col-span-4 space-y-8">
-            
-            {/* Quick Corporate Action Card */}
-            <div className="bg-[#011E52] text-white p-8 rounded-sm shadow-md border-t-4 border-[#FD7B00]">
-              <h4 className="text-lg font-bold text-white uppercase tracking-wider mb-3">
-                Engage Our Group
-              </h4>
-              <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                Are you an international EPC contractor or financial institution exploring opportunities in Nepal? Partner with our local advisory and execution engine.
+              <h1 className="mt-4 text-h1">{post.title}</h1>
+              <p className="mt-5 text-lead text-ink bg-canvas p-5 border-l-4 border-accent">{post.excerpt}</p>
+              <p className="mt-5 text-sm text-muted">
+                By <span className="font-bold text-ink">{post.author}</span>
+                {post.author_role && <span> · {post.author_role}</span>}
               </p>
-              <div className="space-y-3">
-                <Link
-                  to="/tender-inquiry"
-                  className="block w-full text-center py-3 bg-[#FD7B00] hover:bg-[#e66a00] text-white text-xs font-bold uppercase tracking-widest rounded-sm transition-colors shadow-md"
-                >
-                  Submit Tender Support
-                </Link>
-                <Link
-                  to="/infrastructure-tender-services"
-                  className="block w-full text-center py-3 bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-widest rounded-sm transition-colors border border-white/20"
-                >
-                  Foreign Contractor Guide
-                </Link>
-              </div>
-            </div>
+            </header>
 
-            {/* Related Posts */}
-            <div className="bg-white p-6 rounded-sm border border-slate-200 shadow-sm">
-              <h4 className="text-sm font-extrabold text-[#011E52] uppercase tracking-wider mb-6 pb-3 border-b border-slate-100 flex items-center gap-2">
-                <FolderIcon className="w-4 h-4 text-[#FD7B00]" /> Related Publications
-              </h4>
-              <div className="space-y-6">
-                {relatedPosts.map((rPost) => (
-                  <div key={rPost.slug} className="group">
-                    <span className="text-[10px] font-bold text-[#FD7B00] uppercase tracking-wider block mb-1">
-                      {rPost.category}
-                    </span>
-                    <h5 className="text-sm font-bold text-[#011E52] leading-snug group-hover:text-[#FD7B00] transition-colors mb-1.5">
-                      <Link to={`/blog/${rPost.slug}`}>
-                        {rPost.title}
-                      </Link>
-                    </h5>
-                    <p className="text-[11px] text-slate-500">
-                      {new Date(rPost.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • {rPost.reading_time}
-                    </p>
-                  </div>
+            <figure className="mb-10">
+              <img
+                src={unsplash(post.featured_image, { w: 1200, q: 70 })}
+                srcSet={unsplashSrcSet(post.featured_image, [640, 960, 1200, 1600], 70)}
+                onError={hideBrokenImage}
+                sizes="(min-width: 1024px) 60vw, 100vw"
+                width={1200}
+                height={675}
+                decoding="async"
+                alt=""
+                className="w-full aspect-[16/9] object-cover rounded-sm"
+              />
+            </figure>
+
+            <div className="prose-body">{renderMarkdown(post.content)}</div>
+
+            {post.tags && post.tags.length > 0 && (
+              <ul className="mt-12 pt-6 border-t border-line flex flex-wrap items-center gap-2" aria-label="Tags">
+                <li className="inline-flex items-center gap-1.5 text-xs font-bold uppercase text-muted mr-1"><TagIcon className="w-4 h-4" aria-hidden="true" /> Tags</li>
+                {post.tags.map((tag) => (
+                  <li key={tag} className="px-3 py-1 bg-canvas text-ink text-xs font-semibold rounded-sm border border-line">{tag}</li>
                 ))}
+              </ul>
+            )}
+
+            <div className="mt-8 pt-8 border-t border-line flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-ink"><ShareIcon className="w-4 h-4 text-accent-text" aria-hidden="true" /> Share</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => share('linkedin')} className="btn-secondary btn-sm">LinkedIn</button>
+                <button type="button" onClick={() => share('x')} className="btn-secondary btn-sm">X</button>
+                <button type="button" onClick={() => share('whatsapp')} className="btn-secondary btn-sm">WhatsApp</button>
+                <button type="button" onClick={() => share('copy')} className="btn-secondary btn-sm">Copy link</button>
+              </div>
+            </div>
+          </article>
+
+          <aside className="lg:col-span-4 space-y-6">
+            <div className="bg-ink text-white p-7 rounded-sm">
+              <h2 className="text-h3 text-white">Work with the group</h2>
+              <p className="mt-2 text-sm text-slate-300 leading-relaxed">International EPC contractor or financial institution exploring Nepal? Talk to the advisory and execution teams.</p>
+              <div className="mt-5 space-y-2">
+                <Link to="/tender-inquiry" className="btn-accent w-full">Submit a tender inquiry</Link>
+                <Link to="/infrastructure-tender-services" className="btn-outline-light w-full">Foreign contractor guide</Link>
               </div>
             </div>
 
-            {/* Operating Subsidiaries Widget */}
-            <div className="bg-white p-6 rounded-sm border border-slate-200 shadow-sm">
-              <h4 className="text-sm font-extrabold text-[#011E52] uppercase tracking-wider mb-4 pb-3 border-b border-slate-100 flex items-center gap-2">
-                <BuildingOffice2Icon className="w-4 h-4 text-[#FD7B00]" /> Group Subsidiaries
-              </h4>
-              <ul className="space-y-3 text-xs">
-                <li>
-                  <Link to="/companies/roshan-enterprises" className="font-bold text-[#011E52] hover:text-[#FD7B00] transition-colors block">
-                    Roshan Enterprises Pvt. Ltd.
-                  </Link>
-                  <span className="text-[11px] text-slate-500">Bulk Construction Supply & Procurement</span>
-                </li>
-                <li className="pt-2 border-t border-slate-100">
-                  <Link to="/companies/appi-saipal-financial-solutions" className="font-bold text-[#011E52] hover:text-[#FD7B00] transition-colors block">
-                    Appi Saipal Financial Solutions Pvt. Ltd.
-                  </Link>
-                  <span className="text-[11px] text-slate-500">Bank Guarantees & Debt Syndication</span>
-                </li>
-                <li className="pt-2 border-t border-slate-100">
-                  <Link to="/companies/kasthamandap-commerce-and-company" className="font-bold text-[#011E52] hover:text-[#FD7B00] transition-colors block">
-                    Kasthamandap Commerce and Company
-                  </Link>
-                  <span className="text-[11px] text-slate-500">Trading & Material Supply Tenders</span>
-                </li>
-                <li className="pt-2 border-t border-slate-100">
-                  <Link to="/companies/b-c-exim-company" className="font-bold text-[#011E52] hover:text-[#FD7B00] transition-colors block">
-                    B & C Exim Company Pvt. Ltd.
-                  </Link>
-                  <span className="text-[11px] text-slate-500">Cross-Border Trade & Logistics</span>
-                </li>
+            {related.length > 0 && (
+              <section className="card p-6" aria-labelledby="related-heading">
+                <h2 id="related-heading" className="text-xs font-bold uppercase tracking-[0.1em] text-muted pb-3 border-b border-line">Related articles</h2>
+                <ul className="mt-4 space-y-5">
+                  {related.map((r) => (
+                    <li key={r.slug}>
+                      <Link to={`/blog/category/${r.category_slug}`} className="text-xs font-bold uppercase tracking-[0.08em] text-accent-text">{r.category}</Link>
+                      <h3 className="mt-1 text-sm font-bold leading-snug"><Link to={`/blog/${r.slug}`} className="text-ink hover:text-accent-text">{r.title}</Link></h3>
+                      <p className="mt-1 text-xs text-muted"><time dateTime={r.published_at}>{formatDate(r.published_at)}</time> · {r.reading_time}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            <section className="card p-6" aria-labelledby="subs-heading">
+              <h2 id="subs-heading" className="text-xs font-bold uppercase tracking-[0.1em] text-muted pb-3 border-b border-line inline-flex items-center gap-2">
+                <BuildingOffice2Icon className="w-4 h-4 text-accent-text" aria-hidden="true" /> Group companies
+              </h2>
+              <ul className="mt-4 divide-y divide-line">
+                {companies.map((c) => (
+                  <li key={c.slug} className="py-2.5">
+                    <Link to={`/companies/${c.slug}`} className="block text-sm font-bold text-ink hover:text-accent-text">{c.name}</Link>
+                    <span className="block text-xs text-muted">{c.shortDescription}</span>
+                  </li>
+                ))}
               </ul>
-            </div>
-
+            </section>
           </aside>
-
         </div>
-
       </div>
     </div>
   )

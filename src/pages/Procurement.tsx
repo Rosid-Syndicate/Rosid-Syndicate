@@ -1,156 +1,113 @@
-import { useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRightIcon } from '@heroicons/react/24/outline'
 import PageHeader from '../components/PageHeader'
+import Seo from '../components/Seo'
+
+const capabilities = [
+  { title: 'Public-sector procurement', company: 'Roshan Enterprises', slug: 'roshan-enterprises' },
+  { title: 'Government tender fulfilment', company: 'Deiyougo Enterprises', slug: 'deiyougo-enterprises' },
+  { title: 'Construction material supply', company: 'Roshan Enterprises', slug: 'roshan-enterprises' },
+  { title: 'Civil supply tenders', company: 'Kasthamandap Commerce', slug: 'kasthamandap-commerce' },
+  { title: 'Commercial procurement sourcing', company: 'Kasthamandap Commerce', slug: 'kasthamandap-commerce' },
+  { title: 'Import / export execution', company: 'B & C Exim Company', slug: 'b-c-exim' },
+  { title: 'Equipment & tender sourcing', company: 'Deiyougo Enterprises', slug: 'deiyougo-enterprises' },
+  { title: 'Foreign bidder support', company: 'Appi Saipal Financial Solutions', slug: 'appi-saipal-financial-solutions' },
+]
+
+const workflow = [
+  { step: 'Opportunity', desc: 'Identification of viable public or private tenders.' },
+  { step: 'Tender review', desc: 'Technical and financial capability assessment.' },
+  { step: 'Local partner / JV alignment', desc: 'Structuring compliance and legal representation.' },
+  { step: 'Financial & guarantee structure', desc: 'Syndicating required bank guarantees and bonds.' },
+  { step: 'Supply / execution planning', desc: 'Logistics and material-sourcing strategy.' },
+  { step: 'Bid / tender support', desc: 'Final documentation and submission assistance.' },
+  { step: 'Execution support', desc: 'On-the-ground management and supply delivery.' },
+]
 
 export default function Procurement() {
-  useEffect(() => {
-    window.scrollTo(0, 0)
-    document.title = 'Procurement & Tender Center | Rosid Syndicates Group'
-  }, [])
-
   return (
-    <div className="bg-transparent min-h-screen flex flex-col">
-      <PageHeader 
-        title="Procurement & Tender Center" 
-        subtitle="Operations" 
-        image="https://images.unsplash.com/photo-1519003722824-194d4455a60c?q=100&w=3840&auto=format&fit=crop"
+    <div className="bg-canvas min-h-screen">
+      <Seo
+        title="Procurement & Tender Centre"
+        description="Rosid Syndicates Group procurement capabilities in Nepal: public-sector procurement, government tender fulfilment, construction material supply, civil supply tenders, equipment sourcing and import/export execution, plus a seven-step tender support workflow."
+        path="/procurement"
+        breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Procurement & Tender Centre', path: '/procurement' }]}
+      />
+      <PageHeader
+        title="Procurement & tender centre"
+        subtitle="Operations"
+        lead="How the group participates in public and private supply tenders, and the support available to bidders."
+        image="https://images.unsplash.com/photo-1519003722824-194d4455a60c"
       />
 
-      {/* 2. PROCUREMENT CAPABILITIES */}
-      <section className="py-24 bg-transparent">
-        <div className="container max-w-5xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-3xl font-bold text-ink mb-12 text-center">Core Procurement Capabilities</h2>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { title: 'Public-Sector Procurement', company: 'Roshan Enterprises', highlight: 'bg-ocean/10 text-ocean' },
-                { title: 'Government Tender Fulfillment', company: 'Roshan Enterprises', highlight: 'bg-ocean/10 text-ocean' },
-                { title: 'Construction Material Supply', company: 'Roshan Enterprises', highlight: 'bg-ocean/10 text-ocean' },
-                { title: 'Civil Supply Tenders', company: 'Roshan Enterprises', highlight: 'bg-ocean/10 text-ocean' },
-                { title: 'Commercial Procurement Sourcing', company: 'Kasthamandap Commerce', highlight: 'bg-ocean/10 text-ocean' },
-                { title: 'Import/Export Execution', company: 'B & C Exim Company', highlight: 'bg-ocean/10 text-ocean' },
-                { title: 'Equipment & Tender Sourcing', company: 'Deiyougo Enterprises', highlight: 'bg-ocean/10 text-ocean' },
-                { title: 'Foreign Bidder Support', company: 'Appi Saipal Financial Solutions', highlight: 'bg-fire/10 text-fire' },
-              ].map((cap, i) => (
-                <div key={i} className="p-8 bg-white shadow-lg border border-slate-100 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#011E52] to-[#FD7B00] transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"></div>
-                  <h3 className="font-bold text-[#011E52] text-lg mb-6 leading-snug">{cap.title}</h3>
-                  <p className="inline-block px-3 py-1.5 text-[10px] uppercase font-bold tracking-[0.15em] bg-slate-50 text-slate-500 border border-slate-100">
-                    {cap.company}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
+      <section className="py-16 lg:py-24" aria-labelledby="proc-caps">
+        <div className="container">
+          <h2 id="proc-caps" className="text-h2 max-w-3xl">Core procurement capabilities</h2>
+          <ul className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {capabilities.map((cap) => (
+              <li key={cap.title} className="card p-6 flex flex-col">
+                <h3 className="font-bold text-ink leading-snug flex-1">{cap.title}</h3>
+                <Link to={`/companies/${cap.slug}`} className="mt-5 inline-flex text-xs font-semibold uppercase tracking-[0.08em] text-muted hover:text-accent-text">
+                  {cap.company} →
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
-      {/* 3. FOREIGN BIDDER SUPPORT */}
-      <section className="py-24 bg-white text-ink border-y border-slate-100">
+      <section className="py-16 lg:py-24 bg-surface border-y border-line" aria-labelledby="bidder-heading">
         <div className="container max-w-5xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-3xl font-bold mb-12 text-center">Foreign Bidder Support Ecosystem</h2>
-            <div className="grid md:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <div className="pb-6 border-b border-slate-200">
-                  <h3 className="text-xl font-bold mb-3 flex items-center gap-2"><span className="text-fire">01</span> Financial Guarantees</h3>
-                  <p className="text-ink/70 text-sm leading-relaxed mb-4">Secured through Appi Saipal Financial Solutions and Class "A" commercial banks.</p>
-                  <ul className="space-y-2 text-sm text-ink/80">
-                    <li className="flex gap-2"><span>•</span> Counter-Guarantees</li>
-                    <li className="flex gap-2"><span>•</span> Bid Bonds</li>
-                    <li className="flex gap-2"><span>•</span> Performance Bonds</li>
-                    <li className="flex gap-2"><span>•</span> Advance Payment Guarantees</li>
-                    <li className="flex gap-2"><span>•</span> Financial Closure</li>
-                  </ul>
-                </div>
-              </div>
-              <div className="space-y-6">
-                <div className="pb-6 border-b border-slate-200">
-                  <h3 className="text-xl font-bold mb-3 flex items-center gap-2"><span className="text-ocean">02</span> Operational Execution</h3>
-                  <p className="text-ink/70 text-sm leading-relaxed mb-4">Executed through our local civil and commerce subsidiaries.</p>
-                  <ul className="space-y-2 text-sm text-ink/80">
-                    <li className="flex gap-2"><span>•</span> Local Representation</li>
-                    <li className="flex gap-2"><span>•</span> Local JV Structuring</li>
-                    <li className="flex gap-2"><span>•</span> Material Supply</li>
-                    <li className="flex gap-2"><span>•</span> Local Logistics</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </motion.div>
+          <h2 id="bidder-heading" className="text-h2">Foreign bidder support ecosystem</h2>
+          <div className="mt-10 grid md:grid-cols-2 gap-8">
+            <section className="card p-8" aria-labelledby="fin-g">
+              <h3 id="fin-g" className="text-h3 flex items-center gap-3"><span className="font-mono text-sm text-accent-text">01</span> Financial guarantees</h3>
+              <p className="mt-3 text-sm text-muted">Secured through Appi Saipal Financial Solutions and Class "A" commercial banks.</p>
+              <ul className="mt-4 space-y-2 text-sm text-ink list-disc pl-5">
+                <li>Counter-guarantees</li>
+                <li>Bid bonds</li>
+                <li>Performance bonds</li>
+                <li>Advance-payment guarantees</li>
+                <li>Financial closure</li>
+              </ul>
+            </section>
+            <section className="card p-8" aria-labelledby="ops-x">
+              <h3 id="ops-x" className="text-h3 flex items-center gap-3"><span className="font-mono text-sm text-accent-text">02</span> Operational execution</h3>
+              <p className="mt-3 text-sm text-muted">Executed through the group's civil and commerce subsidiaries.</p>
+              <ul className="mt-4 space-y-2 text-sm text-ink list-disc pl-5">
+                <li>Local representation</li>
+                <li>Local JV structuring</li>
+                <li>Material supply</li>
+                <li>Local logistics</li>
+              </ul>
+            </section>
+          </div>
         </div>
       </section>
 
-      {/* 4. TENDER PROCESS */}
-      <section className="py-32 bg-[#F4F4F2]">
-        <div className="container max-w-5xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <div className="text-center mb-24">
-              <h2 className="text-4xl md:text-5xl lg:text-[4rem] font-bold font-sans text-[#011E52] leading-[1.05] tracking-tight">Rosid Service<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FD7B00] to-[#FFB067]">Workflow.</span></h2>
-              <p className="mt-6 text-slate-500 text-sm uppercase tracking-widest font-bold">Standard procurement support methodology</p>
-            </div>
-            
-            <div className="relative">
-              {/* Premium Desktop Connecting Line */}
-              <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-[#011E52] via-[#FD7B00] to-transparent -translate-x-1/2 rounded-full opacity-20"></div>
-              
-              <div className="space-y-12">
-                {[
-                  { step: 'Opportunity', desc: 'Identification of viable public or private tenders.' },
-                  { step: 'Tender Review', desc: 'Technical and financial capability assessment.' },
-                  { step: 'Local Partner / JV Alignment', desc: 'Structuring compliance and legal representation.' },
-                  { step: 'Financial & Guarantee Structure', desc: 'Syndicating required bank guarantees and bonds.' },
-                  { step: 'Supply / Execution Planning', desc: 'Logistics and material sourcing strategy.' },
-                  { step: 'Bid / Tender Support', desc: 'Final documentation and submission assistance.' },
-                  { step: 'Execution Support', desc: 'On-the-ground management and supply delivery.' }
-                ].map((item, index) => (
-                  <motion.div 
-                    key={index}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1, duration: 0.6 }}
-                    className={`relative flex items-center gap-6 md:gap-0 ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}
-                  >
-                    {/* Premium Node Circle for Desktop */}
-                    <div className="hidden md:flex absolute left-1/2 w-8 h-8 bg-white border-4 border-[#011E52] rounded-full -translate-x-1/2 shadow-lg items-center justify-center z-10">
-                      <div className="w-2 h-2 bg-[#FD7B00] rounded-full"></div>
-                    </div>
-                    
-                    <div className="w-full md:w-1/2 flex justify-center">
-                      <div className={`w-full bg-white p-8 sm:p-10 border border-slate-100 shadow-xl relative overflow-hidden group ${index % 2 === 0 ? 'md:mr-16' : 'md:ml-16'}`}>
-                        {/* Huge background number */}
-                        <div className="absolute -right-4 -bottom-4 text-[8rem] font-black text-slate-200 group-hover:text-slate-300 transition-colors pointer-events-none select-none leading-none">
-                          0{index + 1}
-                        </div>
-                        
-                        <div className="relative z-10">
-                          <span className="inline-block px-3 py-1 bg-[#011E52]/5 text-[#011E52] font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Phase 0{index + 1}</span>
-                          <h4 className="font-bold text-[#011E52] text-2xl mb-3">{item.step}</h4>
-                          <p className="text-base text-slate-500 leading-relaxed">{item.desc}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
+      <section className="py-16 lg:py-24" aria-labelledby="workflow-heading">
+        <div className="container max-w-4xl">
+          <p className="eyebrow">Method</p>
+          <h2 id="workflow-heading" className="mt-5 text-h2">Tender support workflow</h2>
+          <p className="mt-4 text-lead text-muted">The standard sequence for a supported bid.</p>
+          <ol className="mt-10 relative border-l-2 border-line ml-4 space-y-8">
+            {workflow.map((item, i) => (
+              <li key={item.step} className="relative pl-10">
+                <span className="absolute -left-[17px] top-0 grid place-items-center w-8 h-8 rounded-full bg-ink text-white text-xs font-bold font-mono ring-4 ring-canvas" aria-hidden="true">{i + 1}</span>
+                <h3 className="text-h3">{item.step}</h3>
+                <p className="mt-1.5 text-muted">{item.desc}</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
-      {/* 5. CTA */}
-      <section className="py-24 bg-transparent border-t border-slate-200 text-center">
-        <div className="container max-w-3xl">
-          <h2 className="text-3xl font-bold text-ink mb-6">Ready to execute?</h2>
-          <p className="text-lg text-slate-500 leading-relaxed mb-10">
-            Partner with Rosid Syndicates Group for seamless tender fulfillment and reliable on-the-ground execution.
-          </p>
-          <Link to="/tender-inquiry" className="inline-flex justify-center items-center gap-2 px-10 py-5 bg-white text-ink font-bold text-sm hover:bg-fire transition-colors uppercase tracking-widest">
-            Discuss a Tender Opportunity <ArrowRightIcon className="w-4 h-4" />
+      <section className="py-16 lg:py-20 bg-ink text-white" aria-labelledby="proc-cta">
+        <div className="container max-w-3xl text-center">
+          <h2 id="proc-cta" className="text-h2 text-white">Have a tender in view?</h2>
+          <p className="mt-4 text-lead text-slate-300">Send the reference, scope and deadline and the procurement desk will respond.</p>
+          <Link to="/tender-inquiry" className="btn-accent mt-8">
+            Discuss a tender opportunity <ArrowRightIcon className="w-4 h-4" aria-hidden="true" />
           </Link>
         </div>
       </section>

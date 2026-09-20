@@ -1,12 +1,13 @@
-import { useState, type FormEvent, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { useId, useRef, useState, type FormEvent } from 'react'
 import toast from 'react-hot-toast'
 import { PaperClipIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { Turnstile } from '@marsidev/react-turnstile'
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import PageHeader from '../components/PageHeader'
+import Seo from '../components/Seo'
+import { LeadSubmitError, submitLead } from '../lib/leads'
+import { trackEvent } from '../utils/analytics'
 
-import { supabase } from '../lib/supabase'
-
+// Must match SUPPORT_OPTIONS in api/tender.js
 const SUPPORT_OPTIONS = [
   'Financial / Guarantee Support',
   'Local JV / Partner',
@@ -15,69 +16,79 @@ const SUPPORT_OPTIONS = [
   'Civil Execution',
   'Foreign Contractor Support',
   'Financial Closure',
-  'Other'
+  'Other',
 ]
 
-type Attachment = {
-  filename: string
-  content: string // base64
+const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'
+const MAX_FILE_BYTES = 2 * 1024 * 1024
+const ACCEPTED_TYPES: Record<string, string> = {
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+}
+
+type Attachment = { filename: string; content: string }
+
+const EMPTY = {
+  companyName: '',
+  country: '',
+  contactPerson: '',
+  email: '',
+  phone: '',
+  tenderName: '',
+  tenderRef: '',
+  projectSector: '',
+  bidDeadline: '',
+  requiredSupport: '',
+  message: '',
+  honeypot: '',
+}
+
+function Field({ id, label, required, children }: { id: string; label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label htmlFor={id} className="field-label">
+        {label} {required && <span aria-hidden="true" className="text-accent-text">*</span>}
+      </label>
+      {children}
+    </div>
+  )
 }
 
 export default function TenderInquiry() {
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
-  const [formData, setFormData] = useState({
-    companyName: '',
-    country: '',
-    contactPerson: '',
-    email: '',
-    phone: '',
-    tenderName: '',
-    tenderRef: '',
-    projectSector: '',
-    bidDeadline: '',
-    requiredSupport: '',
-    message: '',
-    honeypot: ''
-  })
-  
+  const turnstileRef = useRef<TurnstileInstance | null>(null)
+  const errorId = useId()
+
+  const [formData, setFormData] = useState(EMPTY)
   const [attachment, setAttachment] = useState<Attachment | null>(null)
-  const [turnstileToken, setTurnstileToken] = useState<string>('')
+  const [turnstileToken, setTurnstileToken] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }))
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    const validTypes = [
-      'application/pdf', 
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ]
-    if (!validTypes.includes(file.type)) {
-      toast.error('Invalid file type. Only PDF, DOCX, and XLSX are allowed.')
+    const ext = ACCEPTED_TYPES[file.type]
+    const nameExt = file.name.split('.').pop()?.toLowerCase()
+    if (!ext || ext !== nameExt) {
+      toast.error('Only PDF, DOCX and XLSX files are accepted.')
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
-
-    // 2MB size limit to safely respect payload limits
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('File size exceeds the 2MB limit.')
+    if (file.size > MAX_FILE_BYTES) {
+      toast.error('The file exceeds the 2 MB limit.')
       if (fileInputRef.current) fileInputRef.current.value = ''
       return
     }
-
     const reader = new FileReader()
     reader.onload = () => {
-      const base64String = (reader.result as string).split(',')[1]
-      setAttachment({
-        filename: file.name,
-        content: base64String
-      })
+      const base64 = String(reader.result).split(',')[1] || ''
+      setAttachment({ filename: file.name, content: base64 })
     }
     reader.readAsDataURL(file)
   }
@@ -87,214 +98,181 @@ export default function TenderInquiry() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const submit = async (e: FormEvent) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
-    if (!formData.companyName.trim() || !formData.country.trim() || !formData.contactPerson.trim() || !formData.email.trim()) {
-      toast.error('Please fill out all required fields.')
-      return
-    }
+    setErrorMessage(null)
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.email)) {
-      toast.error('Please enter a valid email address.')
+    if (!formData.companyName.trim() || !formData.country.trim() || !formData.contactPerson.trim() || !formData.email.trim()) {
+      setErrorMessage('Please complete the required company and contact fields.')
+      setStatus('error')
       return
     }
 
     setStatus('loading')
-
     try {
-      // 1. Direct insertion to Supabase PostgreSQL
-      const { error: dbError } = await supabase.from('inquiries').insert({
-        inquiry_type: 'Tender / RFQ Inquiry',
-        name: formData.contactPerson.trim(),
-        company_name: formData.companyName.trim(),
-        email: formData.email.trim(),
-        phone: formData.phone.trim() || null,
-        subject: formData.tenderName.trim() || `Tender: ${formData.companyName}`,
-        message: `Country: ${formData.country}\nTender Ref: ${formData.tenderRef || 'N/A'}\nProject Sector: ${formData.projectSector || 'N/A'}\nBid Deadline: ${formData.bidDeadline || 'N/A'}\nRequired Support: ${formData.requiredSupport || 'N/A'}\n\nMessage:\n${formData.message || 'N/A'}`,
-        status: 'New'
-      })
-
-      if (dbError) {
-        console.warn('Direct Supabase insert notice:', dbError.message)
-      }
-
-      // 2. Trigger Serverless API notification (background / non-blocking)
-      try {
-        const payload = { ...formData, attachment, turnstileToken: turnstileToken || 'dev_token' }
-        await fetch('/api/tender', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        })
-      } catch (apiErr) {
-        console.log('Background API notification notice (normal in local dev):', apiErr)
-      }
-
+      await submitLead('/api/tender', { ...formData, attachment, turnstileToken })
       setStatus('success')
-      toast.success('Tender inquiry submitted securely.')
-      
-      setFormData({
-        companyName: '', country: '', contactPerson: '', email: '', phone: '',
-        tenderName: '', tenderRef: '', projectSector: '', bidDeadline: '',
-        requiredSupport: '', message: '', honeypot: ''
-      })
+      toast.success('Tender inquiry received. We will be in touch.')
+      trackEvent('lead_submitted', { form: 'tender', support: formData.requiredSupport || 'unspecified' })
+      setFormData(EMPTY)
       removeFile()
       setTurnstileToken('')
-      
-      setTimeout(() => setStatus('idle'), 3500)
-    } catch (error) {
-      console.error('Submission error:', error)
+      turnstileRef.current?.reset()
+      window.setTimeout(() => setStatus('idle'), 4000)
+    } catch (err) {
+      const e = err as LeadSubmitError
+      setErrorMessage(
+        e.status === 429 && e.retryAfter
+          ? `Too many submissions from this connection. Please try again in about ${Math.ceil(e.retryAfter / 60)} minute(s).`
+          : e.message
+      )
       setStatus('error')
-      toast.error('Submission failed. Please check your connection.')
-      setTimeout(() => setStatus('idle'), 3500)
+      trackEvent('lead_failed', { form: 'tender', status: e.status })
+      turnstileRef.current?.reset()
     }
   }
 
+  const disabled = status === 'loading' || status === 'success'
+
   return (
-    <div className="bg-transparent min-h-screen">
-      <PageHeader 
-        title="Tender & RFQ Inquiry" 
-        subtitle="Secure Portal" 
-        image="https://images.unsplash.com/photo-1574320297042-63bc58baf00c?q=100&w=3840&auto=format&fit=crop"
+    <div className="bg-canvas min-h-screen">
+      <Seo
+        title="Tender & RFQ Inquiry"
+        description="Submit a tender or RFQ inquiry to Rosid Syndicates Group: local JV partnership, bank guarantee support, material supply, procurement and civil execution in Nepal. PDF, DOCX or XLSX documents up to 2 MB."
+        path="/tender-inquiry"
+        breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Tender & RFQ Inquiry', path: '/tender-inquiry' }]}
+      />
+      <PageHeader
+        title="Tender & RFQ inquiry"
+        subtitle="Procurement desk"
+        image="https://images.unsplash.com/photo-1413882353314-73389f63b6fd"
+        compact
       />
 
-      <section className="py-24 bg-transparent">
+      <section className="py-16 lg:py-24">
         <div className="container max-w-4xl">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            
-            <div className="mb-12 p-6 bg-[#F4F4F2] border border-slate-200">
-              <p className="text-sm font-bold text-ink uppercase tracking-widest mb-2">Secure Submission</p>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Your documentation and business details are transmitted securely to our executive team. Uploads are strictly restricted to PDF, DOCX, and XLSX formats (Max 2MB). No data is indexed publicly.
-              </p>
+          <div className="mb-10 p-5 card flex gap-4">
+            <PaperClipIcon className="w-5 h-5 text-accent-text shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="text-sm text-muted leading-relaxed">
+              Share the tender reference, scope and deadline; attach the notice or BoQ if you have it (PDF, DOCX or XLSX up to 2 MB). Submissions go directly to the procurement desk and are not published.
+            </p>
+          </div>
+
+          <form onSubmit={submit} noValidate className="space-y-12" aria-describedby={errorMessage ? errorId : undefined}>
+            <div className="absolute left-[-9999px] top-[-9999px]" aria-hidden="true">
+              <label htmlFor="tender-honeypot">Leave this field empty</label>
+              <input id="tender-honeypot" name="honeypot" type="text" tabIndex={-1} autoComplete="off" value={formData.honeypot} onChange={handleChange} />
             </div>
 
-            <form onSubmit={submit} className="space-y-12">
-              <div className="absolute left-[-9999px] top-[-9999px]" aria-hidden="true">
-                <input type="text" id="honeypot" name="honeypot" tabIndex={-1} value={formData.honeypot} onChange={handleChange} />
+            <fieldset className="card p-6 sm:p-8">
+              <legend className="text-h3 text-ink px-1">1. Company &amp; contact</legend>
+              <div className="grid sm:grid-cols-2 gap-5 mt-6">
+                <Field id="companyName" label="Company name" required>
+                  <input id="companyName" name="companyName" type="text" required maxLength={160} autoComplete="organization" value={formData.companyName} onChange={handleChange} className="field" />
+                </Field>
+                <Field id="country" label="Country" required>
+                  <input id="country" name="country" type="text" required maxLength={80} autoComplete="country-name" value={formData.country} onChange={handleChange} className="field" />
+                </Field>
+                <Field id="contactPerson" label="Contact person" required>
+                  <input id="contactPerson" name="contactPerson" type="text" required maxLength={120} autoComplete="name" value={formData.contactPerson} onChange={handleChange} className="field" />
+                </Field>
+                <Field id="email" label="Email" required>
+                  <input id="email" name="email" type="email" required maxLength={254} autoComplete="email" inputMode="email" value={formData.email} onChange={handleChange} className="field" />
+                </Field>
+                <Field id="phone" label="Phone">
+                  <input id="phone" name="phone" type="tel" maxLength={40} autoComplete="tel" inputMode="tel" value={formData.phone} onChange={handleChange} className="field" />
+                </Field>
               </div>
+            </fieldset>
 
-              {/* SECTION 1: CONTACT INFO */}
-              <div>
-                <h3 className="text-lg font-bold text-ink border-b border-slate-200 pb-4 mb-6">1. Company & Contact Information</h3>
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="companyName" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Company Name *</label>
-                    <input id="companyName" type="text" value={formData.companyName} onChange={handleChange} required className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-fire transition-colors" />
-                  </div>
-                  <div>
-                    <label htmlFor="country" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Country *</label>
-                    <input id="country" type="text" value={formData.country} onChange={handleChange} required className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-fire transition-colors" />
-                  </div>
-                  <div>
-                    <label htmlFor="contactPerson" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Contact Person *</label>
-                    <input id="contactPerson" type="text" value={formData.contactPerson} onChange={handleChange} required className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-fire transition-colors" />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Email *</label>
-                    <input id="email" type="email" value={formData.email} onChange={handleChange} required className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-fire transition-colors" />
-                  </div>
-                  <div>
-                    <label htmlFor="phone" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Phone</label>
-                    <input id="phone" type="tel" value={formData.phone} onChange={handleChange} className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-fire transition-colors" />
-                  </div>
-                </div>
+            <fieldset className="card p-6 sm:p-8">
+              <legend className="text-h3 text-ink px-1">2. Tender / RFQ details</legend>
+              <div className="grid sm:grid-cols-2 gap-5 mt-6">
+                <Field id="tenderName" label="Tender / project name">
+                  <input id="tenderName" name="tenderName" type="text" maxLength={200} value={formData.tenderName} onChange={handleChange} className="field" />
+                </Field>
+                <Field id="tenderRef" label="Tender reference (if any)">
+                  <input id="tenderRef" name="tenderRef" type="text" maxLength={100} value={formData.tenderRef} onChange={handleChange} className="field" />
+                </Field>
+                <Field id="projectSector" label="Project sector">
+                  <input id="projectSector" name="projectSector" type="text" maxLength={100} value={formData.projectSector} onChange={handleChange} className="field" placeholder="Roads, hydropower, transmission…" />
+                </Field>
+                <Field id="bidDeadline" label="Bid deadline">
+                  <input id="bidDeadline" name="bidDeadline" type="date" value={formData.bidDeadline} onChange={handleChange} className="field" />
+                </Field>
               </div>
-
-              {/* SECTION 2: TENDER DETAILS */}
-              <div>
-                <h3 className="text-lg font-bold text-ink border-b border-slate-200 pb-4 mb-6">2. Tender / RFQ Details</h3>
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <label htmlFor="tenderName" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Tender / Project Name</label>
-                    <input id="tenderName" type="text" value={formData.tenderName} onChange={handleChange} className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-ocean transition-colors" />
-                  </div>
-                  <div>
-                    <label htmlFor="tenderRef" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Tender Reference (if any)</label>
-                    <input id="tenderRef" type="text" value={formData.tenderRef} onChange={handleChange} className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-ocean transition-colors" />
-                  </div>
-                  <div>
-                    <label htmlFor="projectSector" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Project Sector</label>
-                    <input id="projectSector" type="text" value={formData.projectSector} onChange={handleChange} className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-ocean transition-colors" />
-                  </div>
-                  <div>
-                    <label htmlFor="bidDeadline" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Bid Deadline</label>
-                    <input id="bidDeadline" type="date" value={formData.bidDeadline} onChange={handleChange} className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-ocean transition-colors text-ink/70" />
-                  </div>
-                </div>
-                
-                <div className="mt-6">
-                  <label htmlFor="requiredSupport" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Required Support</label>
-                  <select id="requiredSupport" value={formData.requiredSupport} onChange={handleChange} className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-ocean transition-colors appearance-none cursor-pointer">
-                    <option value="" disabled className="text-ink/20">Select an option</option>
-                    {SUPPORT_OPTIONS.map(opt => (
-                      <option key={opt} value={opt} className="text-ink bg-transparent">{opt}</option>
+              <div className="mt-5">
+                <Field id="requiredSupport" label="Required support">
+                  <select id="requiredSupport" name="requiredSupport" value={formData.requiredSupport} onChange={handleChange} className="field cursor-pointer">
+                    <option value="">Select an option</option>
+                    {SUPPORT_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
                     ))}
                   </select>
-                </div>
-
-                <div className="mt-6">
-                  <label htmlFor="message" className="block text-xs font-bold text-slate-500 uppercase tracking-[0.1em] mb-2">Message / Scope Description</label>
-                  <textarea id="message" rows={4} value={formData.message} onChange={handleChange} className="w-full bg-transparent border-0 border-b-2 border-slate-200 pb-3 text-ink focus:outline-none focus:border-ocean transition-colors resize-none" />
-                </div>
+                </Field>
               </div>
+              <div className="mt-5">
+                <Field id="message" label="Message / scope description">
+                  <textarea id="message" name="message" rows={5} maxLength={5000} value={formData.message} onChange={handleChange} className="field resize-y min-h-[8rem]" />
+                </Field>
+              </div>
+            </fieldset>
 
-              {/* SECTION 3: DOCUMENT UPLOAD */}
-              <div>
-                <h3 className="text-lg font-bold text-ink border-b border-slate-200 pb-4 mb-6">3. Supporting Documents (Optional)</h3>
-                
+            <fieldset className="card p-6 sm:p-8">
+              <legend className="text-h3 text-ink px-1">3. Supporting document (optional)</legend>
+              <div className="mt-6">
                 {!attachment ? (
-                  <div className="border-2 border-dashed border-slate-200 p-8 text-center bg-white/5 hover:bg-white/10 transition-colors relative">
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleFileChange} 
-                      accept=".pdf,.docx,.xlsx" 
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      title="Upload PDF, DOCX, or XLSX"
+                  <label htmlFor="tender-file" className="block border-2 border-dashed border-line rounded-sm p-8 text-center hover:border-ink/40 focus-within:border-ink transition-colors cursor-pointer">
+                    <input
+                      id="tender-file"
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileChange}
+                      accept=".pdf,.docx,.xlsx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                      className="sr-only"
                     />
-                    <PaperClipIcon className="w-8 h-8 text-ink/40 mx-auto mb-4" />
-                    <p className="text-sm font-bold text-ink">Click or drag to upload</p>
-                    <p className="text-xs text-slate-500 mt-2">PDF, DOCX, or XLSX up to 2MB</p>
-                  </div>
+                    <PaperClipIcon className="w-7 h-7 text-muted mx-auto mb-3" aria-hidden="true" />
+                    <span className="block text-sm font-bold text-ink">Choose a file</span>
+                    <span className="block text-xs text-muted mt-1">PDF, DOCX or XLSX · up to 2 MB</span>
+                  </label>
                 ) : (
-                  <div className="flex items-center justify-between p-4 bg-ocean/10 border border-ocean/20">
-                    <div className="flex items-center gap-3">
-                      <PaperClipIcon className="w-5 h-5 text-ocean" />
-                      <span className="text-sm font-bold text-ink truncate max-w-[200px] sm:max-w-xs">{attachment.filename}</span>
+                  <div className="flex items-center justify-between gap-4 p-4 bg-canvas border border-line rounded-sm">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <PaperClipIcon className="w-5 h-5 text-accent-text shrink-0" aria-hidden="true" />
+                      <span className="text-sm font-bold text-ink truncate">{attachment.filename}</span>
                     </div>
-                    <button type="button" onClick={removeFile} className="p-2 text-ink/50 hover:text-fire transition-colors" title="Remove file">
-                      <XMarkIcon className="w-5 h-5" />
+                    <button type="button" onClick={removeFile} className="btn-ghost btn-sm" aria-label={`Remove ${attachment.filename}`}>
+                      <XMarkIcon className="w-4 h-4" aria-hidden="true" /> Remove
                     </button>
                   </div>
                 )}
               </div>
+            </fieldset>
 
-              {/* SUBMIT */}
-              <div className="pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-6">
-                <Turnstile 
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} 
-                  onSuccess={(token) => setTurnstileToken(token)}
-                  options={{ theme: 'dark' }}
+            <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-5 sm:justify-between">
+              <div className="turnstile-slot">
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={setTurnstileToken}
+                  onExpire={() => setTurnstileToken('')}
+                  options={{ theme: 'light', size: 'flexible' }}
                 />
-
-                <button 
-                  type="submit" 
-                  disabled={status === 'loading' || status === 'success'} 
-                  className="w-full sm:w-auto inline-flex justify-center items-center px-12 py-5 bg-white text-ink font-bold text-sm hover:bg-fire transition-all disabled:opacity-50 uppercase tracking-widest"
-                >
-                  {status === 'loading' ? 'Submitting...' : status === 'success' ? 'Inquiry Sent' : 'Submit Inquiry'}
-                </button>
               </div>
-              
-              {status === 'error' && (
-                <p className="mt-2 text-sm text-red-600 font-bold">Failed to submit. Please check your connection.</p>
-              )}
-            </form>
+              <button type="submit" disabled={disabled} className="btn-primary w-full sm:w-auto shrink-0 whitespace-nowrap" aria-busy={status === 'loading'}>
+                {status === 'loading' ? 'Submitting…' : status === 'success' ? 'Inquiry sent' : 'Submit inquiry'}
+              </button>
+            </div>
 
-          </motion.div>
+            <div className="min-h-[1.5rem]" aria-live="polite">
+              {errorMessage && (
+                <p id={errorId} role="alert" className="text-sm text-danger font-medium">{errorMessage}</p>
+              )}
+              {status === 'success' && (
+                <p className="text-sm text-success font-medium">Thank you — your inquiry has been received by the procurement desk.</p>
+              )}
+            </div>
+          </form>
         </div>
       </section>
     </div>
