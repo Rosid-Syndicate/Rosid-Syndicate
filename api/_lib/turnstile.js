@@ -10,11 +10,34 @@
 // Transport failures (siteverify unreachable) are fail-open with a log line;
 // the honeypot and rate limits still apply in that window.
 
+import { allowedOrigins } from './http.js'
+
 const TEST_SECRETS = new Set([
   '1x0000000000000000000000000000000AA', // always passes
   '2x0000000000000000000000000000000AA', // always fails
   '3x0000000000000000000000000000000AA', // token already spent
 ])
+
+/**
+ * Siteverify echoes the hostname the widget ran on. A token minted on another
+ * site (someone embedding our site key) is rejected even if Cloudflare says
+ * "success". Allowed: the configured/legacy origins, Vercel previews, and
+ * localhost for development.
+ */
+export function hostnameAllowed(hostname) {
+  if (!hostname) return false
+  const h = String(hostname).toLowerCase()
+  if (h === 'localhost' || h === '127.0.0.1') return true
+  if (/^[a-z0-9-]+.vercel.app$/.test(h)) return true
+  for (const origin of allowedOrigins()) {
+    try {
+      if (new URL(origin).hostname === h) return true
+    } catch {
+      /* ignore malformed configured origin */
+    }
+  }
+  return false
+}
 
 export function turnstileMode() {
   const secret = process.env.TURNSTILE_SECRET_KEY
@@ -44,7 +67,10 @@ export async function verifyTurnstile(token, remoteip) {
       signal: AbortSignal.timeout(5000),
     })
     const data = await res.json()
-    if (data && data.success === true) return { ok: true, reason: 'verified' }
+    if (data && data.success === true) {
+      if (data.hostname && !hostnameAllowed(data.hostname)) return { ok: false, reason: 'failed:hostname-mismatch' }
+      return { ok: true, reason: 'verified' }
+    }
     return { ok: false, reason: `failed:${(data?.['error-codes'] || []).join(',') || 'unknown'}` }
   } catch (err) {
     console.warn(JSON.stringify({ ts: new Date().toISOString(), event: 'turnstile.transport_error', error: String(err?.message || err) }))

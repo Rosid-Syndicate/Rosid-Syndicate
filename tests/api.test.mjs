@@ -281,3 +281,41 @@ test('clientIp prefers Vercel-set headers over x-forwarded-for', () => {
   assert.equal(clientIp({ headers: { 'x-forwarded-for': '1.1.1.1, 2.2.2.2' } }), '1.1.1.1')
   assert.equal(clientIp({ headers: {}, socket: { remoteAddress: '::1' } }), '::1')
 })
+
+// ---------------------------------------------------------------------------
+// Turnstile hostname binding + cached public content endpoint
+// ---------------------------------------------------------------------------
+test('Turnstile: a token minted on another hostname is rejected even if Cloudflare says success', async () => {
+  process.env.TURNSTILE_SECRET_KEY = '0xREALSECRET_not_a_test_key_1234567890'
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('challenges.cloudflare.com')) return new Response(JSON.stringify({ success: true, hostname: 'evil.example.com' }), { status: 200 })
+    return new Response('{}', { status: 200 })
+  }
+  const res = mockRes()
+  await contact(mockReq({ body: { ...validContact(), turnstileToken: 'tok_from_elsewhere' } }), res)
+  assert.equal(res.statusCode, 403)
+
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('challenges.cloudflare.com')) return new Response(JSON.stringify({ success: true, hostname: 'www.rosiddai.com' }), { status: 200 })
+    if (String(url).includes('api.resend.com')) return new Response(JSON.stringify({ id: 'email_ok' }), { status: 200 })
+    return new Response('{}', { status: 200 })
+  }
+  const ok = mockRes()
+  await contact(mockReq({ body: { ...validContact(), turnstileToken: 'tok_ours' } }), ok)
+  assert.equal(ok.statusCode, 200)
+})
+
+test('home-content: GET only, never cached on failure, cached with SWR on success', async () => {
+  const { default: homeContent } = await import('../api/home-content.js')
+
+  const bad = mockRes()
+  await homeContent(mockReq({ method: 'POST' }), bad)
+  assert.equal(bad.statusCode, 405)
+
+  delete process.env.SUPABASE_URL
+  delete process.env.VITE_SUPABASE_URL
+  const down = mockRes()
+  await homeContent(mockReq({ method: 'GET' }), down)
+  assert.equal(down.statusCode, 503)
+  assert.equal(down.headers['cache-control'], 'no-store')
+})

@@ -5,7 +5,7 @@
 // discoverable without a redeploy. Cached at the edge for an hour.
 
 import { BLOG_CATEGORY_SLUGS, COMPANY_SLUGS, SERVICE_SLUGS, STATIC_ROUTES, siteUrl } from './_lib/routes.js'
-import { serverSupabase } from './_lib/supabase.js'
+import { publicSupabase } from './_lib/supabase.js'
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
   for (const slug of SERVICE_SLUGS) entries.push(url(`${base}/service/${slug}`, { changefreq: 'monthly', priority: 0.7 }))
 
   let categories = BLOG_CATEGORY_SLUGS
-  const supabase = serverSupabase()
+  const supabase = publicSupabase()
   if (supabase) {
     try {
       const [{ data: posts }, { data: cats }] = await Promise.all([

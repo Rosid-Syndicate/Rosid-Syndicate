@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import toast from 'react-hot-toast'
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { CONTACT } from '../config/site'
@@ -34,6 +34,28 @@ export default function Contact() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const turnstileRef = useRef<TurnstileInstance | null>(null)
+  const formRef = useRef<HTMLFormElement | null>(null)
+  // Cloudflare's script and challenge are only fetched once the form is about
+  // to be seen (or is focused). Visitors who never scroll this far — most of
+  // them — make no third-party requests at all.
+  const [widgetArmed, setWidgetArmed] = useState(false)
+
+  useEffect(() => {
+    const el = formRef.current
+    if (!el || widgetArmed) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setWidgetArmed(true)
+      return
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setWidgetArmed(true)
+      },
+      { rootMargin: '400px 0px' }
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [widgetArmed])
   const errorId = useId()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -112,7 +134,7 @@ export default function Contact() {
             </dl>
           </div>
 
-          <form onSubmit={submit} noValidate className="bg-surface text-ink p-6 sm:p-10 rounded-sm shadow-raised" aria-describedby={errorMessage ? errorId : undefined}>
+          <form ref={formRef} onFocusCapture={() => setWidgetArmed(true)} onSubmit={submit} noValidate className="bg-surface text-ink p-6 sm:p-10 rounded-sm shadow-raised" aria-describedby={errorMessage ? errorId : undefined}>
             {/* Honeypot — hidden from people, filled by naive bots. Never remove aria-hidden/tabIndex. */}
             <div className="absolute left-[-9999px] top-[-9999px]" aria-hidden="true">
               <label htmlFor="contact-honeypot">Leave this field empty</label>
@@ -166,6 +188,8 @@ export default function Contact() {
 
             <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-5 sm:justify-between">
               <div className="turnstile-slot">
+                {!widgetArmed && <div className="h-[65px] w-full rounded-sm border border-line bg-canvas" aria-hidden="true" />}
+                {widgetArmed && (
                 <Turnstile
                   ref={turnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
@@ -180,6 +204,7 @@ export default function Contact() {
                   }}
                   options={{ theme: 'light', size: 'flexible' }}
                 />
+                )}
               </div>
               <button
                 type="submit"

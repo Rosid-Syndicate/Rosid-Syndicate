@@ -11,13 +11,13 @@ import FAQ, { type FaqItem } from '../components/FAQ'
 import { faqs as bundledFaqs } from '../data/faqs'
 import Contact from '../components/Contact'
 import Seo from '../components/Seo'
-import { fetchFaqs, fetchSiteContent, fetchTestimonials, type PublicTestimonial } from '../lib/publicData'
+import { fetchHomeContent, type PublicTestimonial } from '../lib/publicData'
 
 /**
  * Home. The page is pre-rendered with bundled content (FAQs, mission) so the
  * first paint never waits on the network; after hydration, admin-managed
- * content (FAQs, mission statement, published testimonials) replaces it when
- * the database is reachable. Testimonials have no bundled fallback by design.
+ * content (FAQs, mission statement, published testimonials) replaces it via a
+ * single edge-cached request. Testimonials have no bundled fallback by design.
  */
 export default function Home() {
   const [faqs, setFaqs] = useState<FaqItem[]>(bundledFaqs)
@@ -26,14 +26,11 @@ export default function Home() {
 
   useEffect(() => {
     const ctrl = new AbortController()
-    fetchFaqs(ctrl.signal).then((rows) => {
-      if (rows && rows.length) setFaqs(rows.map((r) => ({ q: r.question, a: r.answer })))
-    })
-    fetchSiteContent(ctrl.signal).then((content) => {
-      if (content?.mission && content.mission.trim().length > 20) setMission(content.mission.trim())
-    })
-    fetchTestimonials(ctrl.signal).then((rows) => {
-      if (rows) setTestimonials(rows)
+    fetchHomeContent(ctrl.signal).then((content) => {
+      if (!content) return
+      if (content.faqs.length) setFaqs(content.faqs.map((r) => ({ q: r.question, a: r.answer })))
+      if (content.mission && content.mission.trim().length > 20) setMission(content.mission.trim())
+      setTestimonials(content.testimonials)
     })
     return () => ctrl.abort()
   }, [])

@@ -30,3 +30,18 @@ export function serverSupabase() {
     global: { headers: { 'x-application-name': 'rosid-web-api' } },
   })
 }
+
+/**
+ * Anon-key client for public *reads* (sitemap, cached public content).
+ * Deliberately never the service role: RLS stays the boundary, so a bug in a
+ * public endpoint can only ever expose rows the anon role may already read.
+ */
+export function publicSupabase() {
+  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+  const key = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+  if (!url || !key) return null
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { headers: { 'x-application-name': 'rosid-web-public' } },
+  })
+}
