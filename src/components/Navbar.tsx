@@ -164,7 +164,7 @@ export default function Navbar() {
       className={`site-header fixed top-0 inset-x-0 z-50 border-b border-line backdrop-blur-sm transition-[box-shadow,background-color] duration-[var(--header-transition)] ease-out ${scrolled ? 'bg-white shadow-card' : 'bg-white/95'}`}
     >
       <nav aria-label="Primary" className="container flex items-center justify-between gap-6 py-[var(--header-py)] transition-[padding] duration-[var(--header-transition)] ease-out">
-        <Link to="/" className="flex items-center gap-3 shrink-0 rounded-sm">
+        <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3 shrink-0 rounded-sm">
           <picture>
             <source type="image/webp" srcSet="/brand/logo-mark-128.webp 1x, /brand/logo-mark-192.webp 1.5x" />
             <img
