@@ -27,6 +27,10 @@ const labelClass = 'block text-xs font-bold text-muted uppercase tracking-[0.08e
 export default function Contact() {
   const [formData, setFormData] = useState(EMPTY)
   const [turnstileToken, setTurnstileToken] = useState('')
+  // Set when Cloudflare's widget reports it cannot run here (blocked or broken
+  // DNS for challenges.cloudflare.com). The API still requires a token, so the
+  // honest thing is to say so and offer the direct channels.
+  const [turnstileFailed, setTurnstileFailed] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const turnstileRef = useRef<TurnstileInstance | null>(null)
@@ -165,8 +169,15 @@ export default function Contact() {
                 <Turnstile
                   ref={turnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={setTurnstileToken}
+                  onSuccess={(token) => {
+                    setTurnstileToken(token)
+                    setTurnstileFailed(false)
+                  }}
                   onExpire={() => setTurnstileToken('')}
+                  onError={() => {
+                    setTurnstileToken('')
+                    setTurnstileFailed(true)
+                  }}
                   options={{ theme: 'light', size: 'flexible' }}
                 />
               </div>
@@ -188,6 +199,13 @@ export default function Contact() {
               )}
               {status === 'success' && (
                 <p className="text-sm text-success font-medium">Thank you — your message has been received.</p>
+              )}
+              {turnstileFailed && !errorMessage && (
+                <p className="text-sm text-warning font-medium">
+                  The human-verification check could not load on your network. Please try again on another connection, or email{' '}
+                  <a href={`mailto:${CONTACT.email}`} className="underline underline-offset-2">{CONTACT.email}</a> / call{' '}
+                  <a href={CONTACT.phoneHref} className="underline underline-offset-2">{CONTACT.phone}</a>.
+                </p>
               )}
             </div>
 

@@ -5,6 +5,7 @@ import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import PageHeader from '../components/PageHeader'
 import Seo from '../components/Seo'
 import { LeadSubmitError, submitLead } from '../lib/leads'
+import { CONTACT } from '../config/site'
 import { trackEvent } from '../utils/analytics'
 
 // Must match SUPPORT_OPTIONS in api/tender.js
@@ -63,6 +64,7 @@ export default function TenderInquiry() {
   const [formData, setFormData] = useState(EMPTY)
   const [attachment, setAttachment] = useState<Attachment | null>(null)
   const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileFailed, setTurnstileFailed] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -254,8 +256,15 @@ export default function TenderInquiry() {
                 <Turnstile
                   ref={turnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={setTurnstileToken}
+                  onSuccess={(token) => {
+                    setTurnstileToken(token)
+                    setTurnstileFailed(false)
+                  }}
                   onExpire={() => setTurnstileToken('')}
+                  onError={() => {
+                    setTurnstileToken('')
+                    setTurnstileFailed(true)
+                  }}
                   options={{ theme: 'light', size: 'flexible' }}
                 />
               </div>
@@ -270,6 +279,13 @@ export default function TenderInquiry() {
               )}
               {status === 'success' && (
                 <p className="text-sm text-success font-medium">Thank you — your inquiry has been received by the procurement desk.</p>
+              )}
+              {turnstileFailed && !errorMessage && (
+                <p className="text-sm text-warning font-medium">
+                  The human-verification check could not load on your network. Please try again on another connection, or email{' '}
+                  <a href={`mailto:${CONTACT.email}`} className="underline underline-offset-2">{CONTACT.email}</a> / call{' '}
+                  <a href={CONTACT.phoneHref} className="underline underline-offset-2">{CONTACT.phone}</a>.
+                </p>
               )}
             </div>
           </form>
