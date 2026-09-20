@@ -60,7 +60,10 @@ export default function Login() {
     )
   }
 
-  const captchaBlocked = CAPTCHA_ENABLED && !captchaToken
+  // The widget is a convenience, not the boundary: the token is sent when we
+  // have one and Supabase enforces it only if CAPTCHA is enabled there. Never
+  // block submission on the client — a widget that cannot load (blocked
+  // network, hostname not yet allowed in Cloudflare) must not lock staff out.
   const resetCaptcha = () => {
     setCaptchaToken('')
     turnstileRef.current?.reset()
@@ -68,21 +71,19 @@ export default function Login() {
 
   const handleSignIn = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (captchaBlocked) {
-      setError('Please complete the human verification first.')
-      return
-    }
     setLoading(true)
     setError(null)
     const { error: authError } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
-      options: CAPTCHA_ENABLED ? { captchaToken } : undefined,
+      options: captchaToken ? { captchaToken } : undefined,
     })
     setLoading(false)
     if (authError) {
       // Generic message: do not reveal whether the account exists (enumeration).
-      setError('Sign-in failed. Check your email and password and try again.')
+      // The one exception is a captcha rejection, which the user can act on.
+      const captchaRejected = /captcha/i.test(authError.message || '')
+      setError(captchaRejected ? 'Human verification failed. Complete the check and try again.' : 'Sign-in failed. Check your email and password and try again.')
       resetCaptcha()
       return
     }
@@ -91,15 +92,11 @@ export default function Login() {
 
   const handleReset = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (captchaBlocked) {
-      setError('Please complete the human verification first.')
-      return
-    }
     setLoading(true)
     setError(null)
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
       redirectTo: `${window.location.origin}/admin/reset-password`,
-      ...(CAPTCHA_ENABLED ? { captchaToken } : {}),
+      ...(captchaToken ? { captchaToken } : {}),
     })
     setLoading(false)
     resetCaptcha()
