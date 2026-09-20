@@ -31,11 +31,11 @@ export type SocialPlatform = 'facebook' | 'instagram' | 'x' | 'youtube' | 'linke
  * data — never a dead or invented link.
  */
 export const SOCIAL_PROFILES: Record<SocialPlatform, string> = {
-  facebook: '',
-  instagram: '',
-  x: '',
-  youtube: '',
-  linkedin: '',
+  facebook: '#',
+  instagram: '#',
+  x: '#',
+  youtube: '#',
+  linkedin: '#',
 }
 
 export const SOCIAL_URLS = Object.values(SOCIAL_PROFILES).filter(Boolean)
