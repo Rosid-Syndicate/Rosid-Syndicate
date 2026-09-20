@@ -6,12 +6,26 @@ changes.
 
 ## 1. Vercel serverless functions
 
-| Method / path | Auth | Authorization | Rate limit | Input schema | Max body | Abuse risk | Idempotency | Cache | Output |
+Edge-level controls that apply to every row: Vercel Bot Protection (challenge),
+AI-bot deny, OWASP CRS (log), **POST /api/* rate limit 12 / 60 s per IP → 429**,
+Vercel Authentication on every `*.vercel.app` host.
+
+| Endpoint | Method | Auth | Authorization | Bot control | Rate limit (app) | Cache | Max body | Idempotency | Risk |
 |---|---|---|---|---|---|---|---|---|---|
-| `POST /api/contact` | none (public form) | same-site `Origin` allow-list; cross-site → 403 | 5/h/IP · 15/d/IP · 5/d/sender · dup 10 min | `name` 2–120 · `company` ≤160 · `email` RFC-ish ≤254 · `phone` ≤40 `[0-9+()-. ]` · `inquiryType` ∈ 7 values · `message` 10–5000, ≤3 links · `honeypot` · `turnstileToken` ≤2048 · **no other keys** | 32 kB | spam, lead flooding, email injection | fingerprint claim/release | `no-store` | `200 {success,message}` · `400/403/405/413/429/503 {error}` |
-| `POST /api/tender` | none | same as above | 3/h/IP · 8/d/IP · 4/d/sender · dup 10 min | `companyName` 2–160 · `country` 2–80 · `contactPerson` 2–120 · `email` · `phone` · `tenderName` ≤200 · `tenderRef` ≤100 · `projectSector` ≤100 · `bidDeadline` YYYY-MM-DD · `requiredSupport` ∈ 8 values · `message` ≤5000 · `attachment {filename, content}` pdf/docx/xlsx ≤2 MB decoded, magic bytes · **no other keys** | ~3 MB | as above + malicious attachments, storage/email cost | as above | `no-store` | as above |
-| `GET /sitemap.xml` → `/api/sitemap` | none | read-only; anon Supabase key, published rows only | edge cache 1 h + SWR 1 d | none | — | scraping (public data) | n/a | `s-maxage=3600` | `application/xml` |
-| `OPTIONS /api/*` | none | CORS preflight for allowed origins only | — | — | — | — | — | — | 204 |
+| `/api/contact` | POST | none (public form) | same-site `Origin` allow-list; cross-site → 403 | honeypot · Turnstile siteverify (token required when secret set; **hostname must be ours**; single-use) | 5/h/IP · 15/d/IP · 5/d/sender | `no-store` | 32 kB | claim on sender+message, 10 min | HIGH (DB write + email) |
+| `/api/tender` | POST | none | as above | as above + attachment allow-list (pdf/docx/xlsx, magic bytes, ≤ 2 MB) | 3/h/IP · 8/d/IP · 4/d/sender | `no-store` | ~3 MB | as above | HIGH |
+| `/api/home-content` | GET/HEAD | none | anon key → RLS: published rows only | edge Bot Protection | edge cache absorbs load | `public, max-age=60, s-maxage=300, swr=1d`; `no-store` on 503 | — | n/a (read) | LOW |
+| `/sitemap.xml` → `/api/sitemap` | GET | none | anon key → RLS | edge Bot Protection (verified crawlers exempt) | edge cache | `s-maxage=3600`, swr 1 d | — | n/a | LOW–MEDIUM |
+| `/api/*` | OPTIONS | none | CORS preflight for allowed origins only | — | — | — | — | — | — |
+| `/api/*` | other methods | — | — | — | — | — | — | — | 405 with `Allow` |
+
+Input schemas: contact — `name` 2–120 · `company` ≤160 · `email` ≤254 ·
+`phone` ≤40 `[0-9+()-. ]` · `inquiryType` ∈ 7 values · `message` 10–5000, ≤3
+links · `honeypot` · `turnstileToken` ≤2048 · **no other keys**. Tender —
+`companyName` 2–160 · `country` 2–80 · `contactPerson` 2–120 · `email` ·
+`phone` · `tenderName` ≤200 · `tenderRef` ≤100 · `projectSector` ≤100 ·
+`bidDeadline` YYYY-MM-DD · `requiredSupport` ∈ 8 values · `message` ≤5000 ·
+`attachment {filename, content}` · **no other keys**.
 
 Shared behaviour (`api/_lib/inquiry.js`): control order is method → origin →
 size → honeypot → schema → rate limit → Turnstile → dedupe → persist → notify.

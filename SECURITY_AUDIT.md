@@ -15,6 +15,16 @@ Secret values were never printed.
 
 ---
 
+
+> **Status update — 20 September 2026.** Production now runs on
+> `https://www.rosiddai.com` against Supabase project `yemiingdtfelkfcagins`
+> (the project audited below, `mlfakixbqzgttwzqinvl`, no longer exists). All
+> migrations, sign-up disablement and auth URLs are applied; Vercel Deployment
+> Protection keeps every `*.vercel.app` host private; a scoped edge rate limit
+> guards `POST /api/*`; Turnstile tokens are bound to our hostname on the
+> server. Remaining items are listed in SECURITY_HARDENING.md §10–§11 and
+> ABUSE_PROTECTION.md. See SECURITY_ARCHITECTURE.md for the layer model.
+
 ## 1. Scope and architecture
 
 | Layer | Finding |

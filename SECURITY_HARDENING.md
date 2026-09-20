@@ -13,7 +13,10 @@ outside the repository for every control to be active.
 | Edge / platform | HSTS, CSP, nosniff, frame denial, referrer & permissions policies, COOP; `noindex` + `no-store` on `/admin*`; immutable asset caching; real 404s | `vercel.json` |
 | API (lead endpoints) | Same-site origin check, method allow-list, body size cap, honeypot, strict schema, per-endpoint rate limits (IP + sender), Turnstile, duplicate suppression, escaped email, attachment validation, structured logging, honest status codes | `api/_lib/*.js`, `api/contact.js`, `api/tender.js` |
 | Database | Admin allow-list + `is_admin()` policies, narrowed anon grants, CHECK constraints, storage listing guard, RPC for view counter | `supabase/migrations/20260919_*.sql` |
-| Client | Single write path through the API, no hard-coded credentials, safe markdown renderer (https images only), generic auth errors, noindex on private views, role-aware admin UI, client-side image validation before upload | `src/lib/leads.ts`, `src/lib/supabase.ts`, `src/lib/markdown.tsx`, admin pages |
+| Client | Single write path through the API, no hard-coded credentials, safe markdown renderer (https images only), generic auth errors, noindex on private views, role-aware admin UI, client-side image validation before upload |
+| Edge (Vercel) | Firewall on: Bot Protection (challenge), AI bots (deny, owner decision), OWASP CRS in log mode, custom rule `POST /api/*` 12/60 s per IP → 429; Deployment Protection = Vercel Authentication for all non-custom-domain hosts; `X-Robots-Tag: noindex` on every non-canonical host | Configured 20 Sep 2026 (see ABUSE_PROTECTION.md) |
+| Turnstile binding | siteverify `hostname` must match our origins (`api/_lib/turnstile.js`); tokens are single-use at Cloudflare; secret is server-only | Code done |
+| Public reads | `/api/home-content` and `/api/sitemap` use the anon key (`publicSupabase()`), never the service role | Code done | `src/lib/leads.ts`, `src/lib/supabase.ts`, `src/lib/markdown.tsx`, admin pages |
 | Build | Fails when public Supabase env is missing; route/manifest drift check; no source maps; 0 known vulnerabilities | `vite.config.ts`, `scripts/check-seo-routes.mjs` |
 
 ---

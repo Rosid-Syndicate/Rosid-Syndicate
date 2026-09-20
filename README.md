@@ -4,7 +4,7 @@ Corporate website for **Rosid Syndicates Group**, a Kathmandu-based group of
 five companies working across construction supply, public procurement,
 financial advisory and cross-border trade in Nepal.
 
-Production: https://www.rosiddai.com (Vercel alias: https://rosid-sydnicate-company.vercel.app)
+Production: https://www.rosiddai.com (Vercel project `rosid-sydnicate`; all `*.vercel.app` hosts require Vercel login)
 
 ## Stack
 
@@ -12,7 +12,7 @@ Production: https://www.rosiddai.com (Vercel alias: https://rosid-sydnicate-comp
 |---|---|
 | UI | React 18 · TypeScript · Vite 6 · Tailwind CSS 3 · React Router 7 (`BrowserRouter`) |
 | Data & auth | Supabase (Postgres + Row Level Security, Auth, Storage); staff roles `admin` / `editor` |
-| Serverless | Vercel Node functions in `api/` (`/api/contact`, `/api/tender`, `/api/sitemap`) |
+| Serverless | Vercel Node functions in `api/` (`/api/contact`, `/api/tender`, `/api/sitemap`, `/api/home-content`) |
 | Anti-abuse | Cloudflare Turnstile, honeypot, per-endpoint rate limits (optional Upstash Redis), duplicate suppression |
 | Email | Resend |
 | Editor | TipTap 3 (MIT) storing Markdown; images uploaded to the `site-media` bucket |
@@ -41,6 +41,9 @@ WEBSITE_AUDIT.md        audit findings, measurements, action plan
 SECURITY_AUDIT.md       threat model, vulnerabilities, status
 SECURITY_HARDENING.md   implemented controls, rate-limit matrix, operating requirements
 API_SECURITY_MATRIX.md  endpoint and data-access inventory
+SECURITY_ARCHITECTURE.md layer model and trust boundaries
+ABUSE_PROTECTION.md     traffic classification, firewall rules, rate limits
+TRAFFIC_AND_COST_OPTIMIZATION.md  request map, measurements, caching decisions
 ```
 
 ## Getting started
