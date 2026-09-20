@@ -23,6 +23,23 @@ export const CONTACT = {
   addressLine: 'New Baneshwor, Kathmandu, Nepal',
 }
 
+export type SocialPlatform = 'facebook' | 'instagram' | 'x' | 'youtube' | 'linkedin'
+
+/**
+ * Official profile URLs. Leave a platform empty and its icon is simply not
+ * rendered (footer) and not listed in the Organization `sameAs` structured
+ * data — never a dead or invented link.
+ */
+export const SOCIAL_PROFILES: Record<SocialPlatform, string> = {
+  facebook: '',
+  instagram: '',
+  x: '',
+  youtube: '',
+  linkedin: '',
+}
+
+export const SOCIAL_URLS = Object.values(SOCIAL_PROFILES).filter(Boolean)
+
 export const SUBSIDIARY_COUNT = 5
 
 export function absoluteUrl(path: string): string {

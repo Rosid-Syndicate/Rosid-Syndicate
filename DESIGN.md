@@ -141,6 +141,7 @@ All component classes are in `src/index.css` (`@layer components`).
 | SEO head | `src/components/Seo.tsx` | Every page renders exactly one. |
 | Status badge (admin) | `StatusBadge` in `src/pages/admin/Inquiries.tsx` | Color + text, never color alone. |
 | Not found | `src/pages/NotFound.tsx` | Used for unknown slugs; `noindex`. |
+| Social links | `src/components/SocialLinks.tsx` | Official monochrome glyphs (Facebook, Instagram, X, YouTube, LinkedIn) driven by `SOCIAL_PROFILES` in `src/config/site.ts`; a platform without a URL is not rendered. 44 px targets, muted → white on hover. |
 | Testimonials | `src/components/Testimonials.tsx` | Renders nothing until a real quote is published from the admin; initials avatar when there is no photo. |
 | Confirm dialog | `ConfirmProvider` / `useConfirm()` in `src/components/ConfirmDialog.tsx` | Native `<dialog>`, focus-trapped; `tone: 'danger'` for destructive actions. Never `window.confirm`. |
 | Image field | `src/components/ImageField.tsx` | Upload (validated, downsized to WebP) to the `site-media` bucket or paste an https URL; preview + remove. |

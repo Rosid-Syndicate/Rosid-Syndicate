@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { MapPinIcon, PhoneIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import { companies } from '../data/companies'
 import { CONTACT, SITE_NAME } from '../config/site'
+import SocialLinks from './SocialLinks'
 
 const capabilities = [
   { label: 'Foreign contractor support', to: '/infrastructure-tender-services' },
@@ -47,6 +48,7 @@ export default function Footer() {
             <p className="text-sm leading-relaxed max-w-sm text-slate-400">
               A Kathmandu-based group of five companies working across construction supply, public procurement, financial advisory and cross-border trade in Nepal.
             </p>
+            <SocialLinks className="-ml-3" />
           </div>
 
           <nav className="lg:col-span-3" aria-labelledby="footer-companies">

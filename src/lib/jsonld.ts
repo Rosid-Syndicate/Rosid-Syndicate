@@ -1,4 +1,4 @@
-import { CONTACT, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '../config/site'
+import { CONTACT, SITE_DESCRIPTION, SITE_NAME, SITE_URL, SOCIAL_URLS } from '../config/site'
 
 // Site-level structured data. Only facts already published on the site.
 
@@ -19,6 +19,7 @@ export function organizationJsonLd() {
       addressCountry: CONTACT.addressCountry,
     },
     areaServed: { '@type': 'Country', name: 'Nepal' },
+    ...(SOCIAL_URLS.length ? { sameAs: SOCIAL_URLS } : {}),
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'sales',
