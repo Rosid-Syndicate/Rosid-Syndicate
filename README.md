@@ -85,8 +85,10 @@ shows "Continue with Google" on the admin login once the provider is enabled in 
 
 ## Database
 
-Apply the migrations in `supabase/migrations/` in order through the Supabase SQL
-editor. `20260919_admin_authorization.sql` introduces the admin allow-list and
+Supabase project: `yemiingdtfelkfcagins` ("Rosid-Sydnicate"). Apply the migrations in
+`supabase/migrations/` in order — with the CLI (`npx supabase login`, then
+`npx supabase db query --linked --project-ref yemiingdtfelkfcagins -f <file>`) or the SQL
+editor. Hosted auth settings are declared in `supabase/config.toml` (`npx supabase config push`). `20260919_admin_authorization.sql` introduces the admin allow-list and
 admin-only policies; `20260919_admin_roles_content.sql` adds staff roles
 (`admin` / `editor`), the testimonials and FAQs tables and the `site-media`
 upload bucket. Review `public.admin_users` after applying them and disable

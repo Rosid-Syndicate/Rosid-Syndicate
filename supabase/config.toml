@@ -1,0 +1,16 @@
+# Declared hosted-project settings, applied with `npx supabase config push`.
+# Only the properties listed here are managed; everything else stays as set in
+# the dashboard. Preview changes first with `npx supabase config diff`.
+project_id = "yemiingdtfelkfcagins"
+
+[auth]
+# Where auth emails link back to and which redirects are allowed.
+site_url = "https://www.rosiddai.com"
+additional_redirect_urls = [
+  "https://www.rosiddai.com/admin/reset-password",
+  "https://www.rosiddai.com/admin/dashboard",
+  "https://rosiddai.com/admin/reset-password",
+]
+# Staff accounts are created by an administrator (Authentication → Users);
+# public self-registration must stay off (SECURITY_AUDIT.md finding C-1).
+enable_signup = false

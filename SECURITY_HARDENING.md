@@ -178,6 +178,13 @@ or public pages for verified search bots.
 
 ## 10. Supabase requirements
 
+**Status (20 Sep 2026):** the original project (`mlfakixbqzgttwzqinvl`) no longer
+exists (NXDOMAIN). The site now targets project **`yemiingdtfelkfcagins`
+("Rosid-Sydnicate")**, where steps 1, 3 and 4 below have been applied with the
+Supabase CLI: all four schema migrations, `enable_signup = false`, Site URL and
+redirect URLs (declared in `supabase/config.toml`, applied with
+`npx supabase config push`). `admin.rosid@gmail.com` is the first active admin.
+
 1. Apply `supabase/migrations/20260919_admin_authorization.sql`, then `20260919_admin_roles_content.sql` in the SQL editor.
 2. Review `public.admin_users` (email, role, is_active); remove non-staff accounts. Add colleagues from Admin → Users & roles, then create their login in Authentication → Users — the browser never holds a service key, so it cannot create auth accounts itself.
 3. Authentication → Providers → Email → disable new sign-ups.
