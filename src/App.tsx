@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom'
 import { SpeedInsights } from '@vercel/speed-insights/react'
+import { Analytics } from '@vercel/analytics/react'
 import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -158,6 +159,7 @@ export default function App() {
       {/* Vercel Speed Insights: same-origin script + beacon (/_vercel/…), so the
           CSP needs nothing beyond 'self'. Client only — not part of the prerender. */}
       <SpeedInsights />
+      <Analytics />
     </BrowserRouter>
   )
 }

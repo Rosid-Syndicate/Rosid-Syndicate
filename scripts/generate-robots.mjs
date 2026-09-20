@@ -19,6 +19,36 @@ Disallow: /api/
 # Case-study routes have no published data yet; re-enable when src/data/projects.ts is populated
 Disallow: /project/
 
+# Block AI crawlers and scrapers
+User-agent: ClaudeBot
+Disallow: /
+User-agent: Claude-Web
+Disallow: /
+User-agent: GPTBot
+Disallow: /
+User-agent: ChatGPT-User
+Disallow: /
+User-agent: CCBot
+Disallow: /
+User-agent: anthropic-ai
+Disallow: /
+User-agent: Google-Extended
+Disallow: /
+User-agent: PerplexityBot
+Disallow: /
+User-agent: Omgili
+Disallow: /
+User-agent: OmgiliBot
+Disallow: /
+User-agent: Diffbot
+Disallow: /
+User-agent: Bytespider
+Disallow: /
+User-agent: ImagesiftBot
+Disallow: /
+User-agent: cohere-ai
+Disallow: /
+
 Sitemap: ${siteUrl}/sitemap.xml
 `
 
