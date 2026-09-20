@@ -30,31 +30,47 @@ const GLYPHS: Record<SocialPlatform, { label: string; path: string }> = {
 }
 
 /**
- * Social profile icons for the footer. Only platforms with a URL in
- * `SOCIAL_PROFILES` are rendered, so an unconfigured network never produces a
- * dead link. Each target is 44 px (WCAG 2.5.8) and carries a full accessible
- * name; the row inherits the footer's muted text colour.
+ * Social profile icons for the footer. Every platform is shown so the row is
+ * complete; a platform whose URL is not configured yet renders as a dimmed,
+ * non-interactive placeholder (no dead links), and becomes a real link the
+ * moment its URL is added to `SOCIAL_PROFILES`. Targets are 44 px
+ * (WCAG 2.5.8) and links carry a full accessible name; the row inherits the
+ * footer's muted text colour.
  */
 export default function SocialLinks({ className = '' }: { className?: string }) {
-  const entries = (Object.keys(GLYPHS) as SocialPlatform[]).filter((p) => SOCIAL_PROFILES[p])
-  if (entries.length === 0) return null
+  const platforms = Object.keys(GLYPHS) as SocialPlatform[]
   return (
     <ul className={`flex flex-wrap items-center gap-1 ${className}`} aria-label={`${SITE_NAME} on social media`}>
-      {entries.map((platform) => {
+      {platforms.map((platform) => {
         const { label, path } = GLYPHS[platform]
+        const url = SOCIAL_PROFILES[platform]
+        const icon = (
+          <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
+            <path d={path} />
+          </svg>
+        )
         return (
           <li key={platform}>
-            <a
-              href={SOCIAL_PROFILES[platform]}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="grid h-11 w-11 place-items-center rounded-sm text-slate-400 transition-colors duration-fast hover:text-white"
-              aria-label={`${SITE_NAME} on ${label} (opens in a new tab)`}
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden="true" focusable="false">
-                <path d={path} />
-              </svg>
-            </a>
+            {url ? (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="grid h-11 w-11 place-items-center rounded-sm text-slate-400 transition-colors duration-fast hover:text-white"
+                aria-label={`${SITE_NAME} on ${label} (opens in a new tab)`}
+              >
+                {icon}
+              </a>
+            ) : (
+              <span
+                className="grid h-11 w-11 place-items-center rounded-sm text-slate-500"
+                role="img"
+                aria-label={`${label} — profile link coming soon`}
+                title={`${label} — profile link coming soon`}
+              >
+                {icon}
+              </span>
+            )}
           </li>
         )
       })}
