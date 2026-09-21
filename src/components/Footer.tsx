@@ -100,10 +100,10 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Legal bar: copyright · agency credit · legal links on one line from xl; stacks below that. */}
-        <div className="mt-14 pt-6 border-t border-white/10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between xl:gap-8">
-          <p className="text-xs text-slate-400 xl:shrink-0 xl:whitespace-nowrap" suppressHydrationWarning>&copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
-          <p className="text-xs text-slate-400 xl:shrink-0 xl:whitespace-nowrap">
+        {/* Legal bar: copyright · agency credit · legal links on one line from lg; stacks below that. */}
+        <div className="mt-14 pt-6 border-t border-white/10 flex flex-col items-center text-center gap-4 lg:flex-row lg:text-left lg:justify-between lg:gap-8 overflow-hidden">
+          <p className="text-xs text-slate-400 lg:shrink-0 lg:whitespace-nowrap" suppressHydrationWarning>&copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
+          <p className="text-xs text-slate-400 lg:shrink-0 lg:whitespace-nowrap">
             Website by{' '}
             <a
               href="https://www.tradiedigitalagency.com/"
@@ -114,8 +114,8 @@ export default function Footer() {
               Tradie Digital Agency<span className="sr-only"> (opens in a new tab)</span>
             </a>
           </p>
-          <nav aria-label="Legal" className="xl:shrink-0">
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 xl:flex-nowrap">
+          <nav aria-label="Legal" className="lg:shrink-0 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
+            <ul className="flex flex-nowrap justify-start lg:justify-end gap-x-5 px-4 pr-12 lg:px-1 lg:pr-1">
               {legal.map((l) => (
                 <li key={l.to}>
                   <Link to={l.to} className="text-xs font-semibold whitespace-nowrap text-slate-400 hover:text-white transition-colors duration-fast">{l.label}</Link>

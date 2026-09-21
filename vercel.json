@@ -30,7 +30,7 @@
     },
     {
       "source": "/blog",
-      "destination": "/app.html"
+      "destination": "/blog.html"
     },
     {
       "source": "/blog/category/:slug",
@@ -42,51 +42,51 @@
     },
     {
       "source": "/companies",
-      "destination": "/app.html"
+      "destination": "/companies.html"
     },
     {
       "source": "/companies/:slug",
-      "destination": "/app.html"
+      "destination": "/companies/:slug.html"
     },
     {
       "source": "/infrastructure-tender-services",
-      "destination": "/app.html"
+      "destination": "/infrastructure-tender-services.html"
     },
     {
       "source": "/group-structure",
-      "destination": "/app.html"
+      "destination": "/group-structure.html"
     },
     {
       "source": "/corporate-profile",
-      "destination": "/app.html"
+      "destination": "/corporate-profile.html"
     },
     {
       "source": "/procurement",
-      "destination": "/app.html"
+      "destination": "/procurement.html"
     },
     {
       "source": "/tender-inquiry",
-      "destination": "/app.html"
+      "destination": "/tender-inquiry.html"
     },
     {
       "source": "/credentials",
-      "destination": "/app.html"
+      "destination": "/credentials.html"
     },
     {
       "source": "/privacy-policy",
-      "destination": "/app.html"
+      "destination": "/privacy-policy.html"
     },
     {
       "source": "/terms-conditions",
-      "destination": "/app.html"
+      "destination": "/terms-conditions.html"
     },
     {
       "source": "/cookie-policy",
-      "destination": "/app.html"
+      "destination": "/cookie-policy.html"
     },
     {
       "source": "/projects",
-      "destination": "/app.html"
+      "destination": "/projects.html"
     },
     {
       "source": "/project/:slug",
@@ -94,7 +94,7 @@
     },
     {
       "source": "/service/:slug",
-      "destination": "/app.html"
+      "destination": "/service/:slug.html"
     },
     {
       "source": "/admin",

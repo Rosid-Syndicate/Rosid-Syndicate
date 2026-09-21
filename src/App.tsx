@@ -14,22 +14,22 @@ import { initAnalytics, trackPageView } from './utils/analytics'
 // LCP-critical route); everything else — and the entire admin — loads on demand.
 // Before this change a single 714 kB chunk shipped the admin, blog editor and
 // every policy page to every visitor.
-const ProjectDetail = lazy(() => import('./pages/ProjectDetail'))
-const ServiceDetail = lazy(() => import('./pages/ServiceDetail'))
-const Companies = lazy(() => import('./pages/Companies'))
-const CompanyDetail = lazy(() => import('./pages/CompanyDetail'))
-const AppiSaipal = lazy(() => import('./pages/AppiSaipal'))
-const ForeignContractorWorkflow = lazy(() => import('./pages/ForeignContractorWorkflow'))
-const ProjectsPage = lazy(() => import('./pages/Projects'))
-const GroupStructure = lazy(() => import('./pages/GroupStructure'))
-const CorporateProfile = lazy(() => import('./pages/CorporateProfile'))
-const Procurement = lazy(() => import('./pages/Procurement'))
-const TenderInquiry = lazy(() => import('./pages/TenderInquiry'))
-const CredentialsPage = lazy(() => import('./pages/Credentials'))
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
-const TermsConditions = lazy(() => import('./pages/TermsConditions'))
-const CookiePolicy = lazy(() => import('./pages/CookiePolicy'))
-const Blog = lazy(() => import('./pages/Blog'))
+import ProjectDetail from './pages/ProjectDetail'
+import ServiceDetail from './pages/ServiceDetail'
+import Companies from './pages/Companies'
+import CompanyDetail from './pages/CompanyDetail'
+import AppiSaipal from './pages/AppiSaipal'
+import ForeignContractorWorkflow from './pages/ForeignContractorWorkflow'
+import ProjectsPage from './pages/Projects'
+import GroupStructure from './pages/GroupStructure'
+import CorporateProfile from './pages/CorporateProfile'
+import Procurement from './pages/Procurement'
+import TenderInquiry from './pages/TenderInquiry'
+import CredentialsPage from './pages/Credentials'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsConditions from './pages/TermsConditions'
+import CookiePolicy from './pages/CookiePolicy'
+import Blog from './pages/Blog'
 const BlogPost = lazy(() => import('./pages/BlogPost'))
 const BlogCategory = lazy(() => import('./pages/BlogCategory'))
 const NotFound = lazy(() => import('./pages/NotFound'))
@@ -53,9 +53,16 @@ const AdminUsers = lazy(() => import('./pages/admin/Users'))
 
 function RouteFallback() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center" role="status" aria-live="polite">
+    <div className="fixed top-0 left-0 w-full h-1 z-[100]" role="status" aria-live="polite">
       <span className="sr-only">Loading…</span>
-      <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" aria-hidden="true" />
+      <div className="h-full bg-accent animate-[pulse_1s_ease-in-out_infinite] origin-left" style={{ animationName: 'loading-bar', animationDuration: '1.5s', animationIterationCount: 'infinite' }} aria-hidden="true" />
+      <style>{`
+        @keyframes loading-bar {
+          0% { width: 0%; transform: translateX(0); }
+          50% { width: 50%; transform: translateX(50vw); }
+          100% { width: 100%; transform: translateX(100vw); }
+        }
+      `}</style>
     </div>
   )
 }
