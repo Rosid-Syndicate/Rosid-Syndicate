@@ -101,7 +101,7 @@ export default function Footer() {
         </div>
 
         {/* Legal bar: copyright · agency credit · legal links on one line from lg; stacks below that. */}
-        <div className="mt-14 pt-6 border-t border-white/10 flex flex-col items-center text-center gap-4 lg:flex-row lg:text-left lg:justify-between lg:gap-8 overflow-hidden">
+        <div className="mt-14 pt-6 border-t border-white/10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between lg:gap-8">
           <p className="text-xs text-slate-400 lg:shrink-0 lg:whitespace-nowrap" suppressHydrationWarning>&copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
           <p className="text-xs text-slate-400 lg:shrink-0 lg:whitespace-nowrap">
             Website by{' '}
@@ -114,8 +114,12 @@ export default function Footer() {
               Tradie Digital Agency<span className="sr-only"> (opens in a new tab)</span>
             </a>
           </p>
-          <nav aria-label="Legal" className="lg:shrink-0 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
-            <ul className="flex flex-nowrap justify-start lg:justify-end gap-x-5 px-4 pr-12 lg:px-1 lg:pr-1">
+          {/* 
+            Reserve space for the fixed back-to-top button (right-5 + w-11 = 4rem + safe gap).
+            This ensures the last item (Cookie policy) is never hidden behind the button.
+          */}
+          <nav aria-label="Legal" className="lg:shrink-0 pr-16 md:pr-20">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 lg:flex-nowrap lg:justify-end">
               {legal.map((l) => (
                 <li key={l.to}>
                   <Link to={l.to} className="text-xs font-semibold whitespace-nowrap text-slate-400 hover:text-white transition-colors duration-fast">{l.label}</Link>
