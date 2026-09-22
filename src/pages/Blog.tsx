@@ -103,8 +103,8 @@ export default function Blog() {
 
         {/* Featured */}
         {featuredPost && (
-          <article className="mt-10 card overflow-hidden grid lg:grid-cols-12">
-            <Link to={`/blog/${featuredPost.slug}`} tabIndex={-1} aria-hidden="true" className="lg:col-span-7 relative aspect-[16/9] lg:aspect-auto lg:min-h-[420px] overflow-hidden bg-ink">
+          <article className="mt-10 card overflow-hidden lg:flex">
+            <Link to={`/blog/${featuredPost.slug}`} tabIndex={-1} aria-hidden="true" className="block aspect-[16/9] lg:aspect-auto lg:w-[58%] lg:shrink-0 lg:self-stretch overflow-hidden bg-ink">
               <img
                 src={unsplash(featuredPost.featured_image, { w: 1200, q: 65 })}
                 srcSet={unsplashSrcSet(featuredPost.featured_image, [640, 960, 1200, 1600], 65)}
@@ -113,10 +113,10 @@ export default function Blog() {
                 loading="eager"
                 decoding="async"
                 alt=""
-                className="absolute inset-0 w-full h-full object-cover object-top"
+                className="w-full h-full object-cover object-top"
               />
             </Link>
-            <div className="lg:col-span-5 p-8 lg:p-10 flex flex-col">
+            <div className="p-8 lg:p-10 flex flex-col flex-1">
               <div className="flex items-center gap-3 text-xs">
                 <span className="font-bold uppercase tracking-[0.08em] text-accent-text">Latest</span>
                 <Link to={`/blog/category/${featuredPost.category_slug}`} className="text-muted hover:text-ink">{featuredPost.category}</Link>
